@@ -1,0 +1,199 @@
+// Shared by every module: tenants (clients), logins, which modules a client has,
+// customers (contacts), consent and messaging.
+
+enum ClientStatus {
+  ACTIVE
+  PAUSED
+}
+
+enum MemberRole {
+  OWNER
+  STAFF
+}
+
+/// A business that uses the platform (one tenant). Module-specific settings
+/// live in each module's own tables (e.g. ReviewSettings).
+model Client {
+  id           String       @id @default(uuid()) @db.Uuid
+  name         String
+  status       ClientStatus @default(ACTIVE)
+  brandColor   String       @default("#1f6f5c")
+  /// Max messages (WhatsApp + email, all modules) per calendar month. Null = no cap.
+  monthlyCap   Int?
+  contactEmail String?
+  contactPhone String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  logo          ClientLogo?
+  modules       ClientModule[]
+  memberships   Membership[]
+  invites       Invite[]
+  customers     Customer[]
+  consentLogs   ConsentLog[]
+  usageCounters UsageCounter[]
+
+  // Reviews module
+  reviewSettings ReviewSettings?
+  reviewRequests ReviewRequest[]
+
+  @@map("client")
+}
+
+/// Logo bytes live in their own table so normal Client queries never load them.
+model ClientLogo {
+  id          String   @id @default(uuid()) @db.Uuid
+  clientId    String   @unique @db.Uuid
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  data        Bytes
+  contentType String
+  sizeBytes   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("client_logo")
+}
+
+/// Which modules a client has switched on (e.g. "reviews"). Keys are defined
+/// in modules/catalog.ts. No row = module off.
+model ClientModule {
+  id        String   @id @default(uuid()) @db.Uuid
+  clientId  String   @db.Uuid
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  module    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([clientId, module])
+  @@map("client_module")
+}
+
+model Membership {
+  id        String     @id @default(uuid()) @db.Uuid
+  userId    String     @db.Uuid
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clientId  String     @db.Uuid
+  client    Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  role      MemberRole
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // v1: a login belongs to exactly one client.
+  @@unique([userId])
+  @@index([clientId])
+  @@map("membership")
+}
+
+/// Invite link that lets someone set a password and join a client.
+/// Only the SHA-256 hash of the token is stored.
+model Invite {
+  id              String     @id @default(uuid()) @db.Uuid
+  clientId        String     @db.Uuid
+  client          Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  email           String
+  name            String
+  role            MemberRole
+  tokenHash       String     @unique
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  invitedByUserId String?    @db.Uuid
+  invitedBy       User?      @relation("InvitedBy", fields: [invitedByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([clientId])
+  @@map("invite")
+}
+
+/// A client's customer (contact), shared by all modules. Phone/email are unique per client when present
+/// (Postgres treats NULLs as distinct, so many customers may lack an email).
+model Customer {
+  id         String    @id @default(uuid()) @db.Uuid
+  clientId   String    @db.Uuid
+  client     Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name       String
+  phoneE164  String?
+  email      String?
+  /// Permanent opt-out for this client. Never cleared by re-uploads.
+  optedOutAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Reviews module
+  reviewRequests ReviewRequest[]
+
+  @@unique([clientId, phoneE164])
+  @@unique([clientId, email])
+  @@map("customer")
+}
+
+enum Channel {
+  WHATSAPP
+  EMAIL
+}
+
+/// One row per manual send or CSV batch (any module): who confirmed consent, when, from where.
+model ConsentLog {
+  id               String   @id @default(uuid()) @db.Uuid
+  clientId         String   @db.Uuid
+  client           Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId           String?  @db.Uuid
+  user             User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  batchLabel       String
+  statementVersion String
+  ip               String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  reviewRequests ReviewRequest[]
+
+  @@index([clientId])
+  @@map("consent_log")
+}
+
+model UsageCounter {
+  id            String   @id @default(uuid()) @db.Uuid
+  clientId      String   @db.Uuid
+  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  /// Calendar month in YYYY-MM (Africa/Johannesburg).
+  month         String
+  whatsappCount Int      @default(0)
+  emailCount    Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([clientId, month])
+  @@map("usage_counter")
+}
+
+/// Raw provider events (delivery receipts, sends, failures) for auditing.
+/// Each module links its own record (reviewRequestId for Reviews).
+model MessageEvent {
+  id                String         @id @default(uuid()) @db.Uuid
+  reviewRequestId   String?        @db.Uuid
+  reviewRequest     ReviewRequest? @relation(fields: [reviewRequestId], references: [id], onDelete: Cascade)
+  provider          String
+  providerMessageId String?
+  eventType         String
+  payload           Json?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([providerMessageId])
+  @@index([reviewRequestId])
+  @@map("message_event")
+}
+
+/// Enquiries from the public contact form.
+model Enquiry {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  business  String?
+  email     String
+  phone     String?
+  message   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("enquiry")
+}

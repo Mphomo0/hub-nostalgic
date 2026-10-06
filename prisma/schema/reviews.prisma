@@ -1,0 +1,72 @@
+// Reviews module: review requests, ratings, private feedback.
+
+/// Per-client Reviews settings (one row per client that has the module).
+model ReviewSettings {
+  id               String   @id @default(uuid()) @db.Uuid
+  clientId         String   @unique @db.Uuid
+  client           Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  googleReviewUrl  String
+  remindersEnabled Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("review_settings")
+}
+
+enum RequestStatus {
+  QUEUED
+  SENT
+  FAILED
+  OPENED
+  RATED
+  CLICKED_GOOGLE
+}
+
+model ReviewRequest {
+  id              String        @id @default(uuid()) @db.Uuid
+  clientId        String        @db.Uuid
+  client          Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  customerId      String        @db.Uuid
+  customer        Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  sentByUserId    String?       @db.Uuid
+  sentBy          User?         @relation("SentBy", fields: [sentByUserId], references: [id], onDelete: SetNull)
+  channel         Channel
+  /// Public, unguessable token used in /r/[token] and /unsubscribe/[token].
+  token           String        @unique
+  status          RequestStatus @default(QUEUED)
+  rating          Int?
+  failureReason   String?
+  sentAt          DateTime?
+  openedAt        DateTime?
+  ratedAt         DateTime?
+  googleClickedAt DateTime?
+  reminderSentAt  DateTime?
+  consentLogId    String?       @db.Uuid
+  consentLog      ConsentLog?   @relation(fields: [consentLogId], references: [id], onDelete: SetNull)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  feedback      Feedback[]
+  messageEvents MessageEvent[]
+
+  @@index([clientId, createdAt])
+  @@index([customerId, createdAt])
+  @@index([status, sentAt])
+  @@map("review_request")
+}
+
+/// Private feedback left by low raters (1–3 stars).
+model Feedback {
+  id              String        @id @default(uuid()) @db.Uuid
+  reviewRequestId String        @db.Uuid
+  reviewRequest   ReviewRequest @relation(fields: [reviewRequestId], references: [id], onDelete: Cascade)
+  message         String
+  handledAt       DateTime?
+  handledByUserId String?       @db.Uuid
+  handledBy       User?         @relation("HandledBy", fields: [handledByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([reviewRequestId])
+  @@map("feedback")
+}

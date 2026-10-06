@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/* Design tokens. Light theme only for the app UI in v1. */
+:root {
+  /* Brand colours come from the Nostalgic Hub logo (public/logo.png). */
+  --paper: #f6f7f3;
+  --card: #ffffff;
+  --ink: #373a35;
+  --muted: #686b64;
+  --line: #e2e5dc;
+  --brand: #44e843;
+  --brand-ink: #373a35;
+  --brand-strong: #1b7a1b; /* logo green darkened for readable text on light backgrounds */
+  --brand-soft: #e2f8e1;
+  --star: #f2b51d;
+  --danger: #b4372d;
+  --danger-soft: #f8e5e2;
+  --warn-soft: #fbf0d6;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-star: var(--star);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn-soft: var(--warn-soft);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), Georgia, serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand-strong);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

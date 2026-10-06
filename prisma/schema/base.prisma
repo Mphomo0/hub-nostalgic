@@ -1,0 +1,17 @@
+// Prisma schema, split by area. Prisma reads every .prisma file in this folder.
+//   base.prisma      generator + datasource
+//   auth.prisma      Better Auth tables (users, sessions, credentials)
+//   platform.prisma  shared by every module: clients, logins, modules, contacts, messaging
+//   reviews.prisma   the Reviews module
+// A new module adds its own <module>.prisma file.
+//
+// Conventions: UUID ids, createdAt/updatedAt on every table, snake_case table names.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
