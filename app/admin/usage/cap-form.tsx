@@ -16,8 +16,8 @@ export function CapForm({ clientId, clientName, monthlyCap }: { clientId: string
       <div className="flex items-center gap-2">
         <input type="hidden" {...register("clientId")} />
         <Input inputMode="numeric" placeholder="None" aria-label={`Monthly cap for ${clientName}`} aria-invalid={!!errors.monthlyCap} className="w-24 py-1.5" {...register("monthlyCap")} />
-        <Button variant="secondary" className="px-3 py-1.5" disabled={pending}>{pending ? "…" : "Set"}</Button>
-        {state?.ok && !form.formState.isDirty && <span className="text-xs text-brand-strong">Saved</span>}
+        <Button variant="secondary" className="px-3 py-1.5" disabled={pending}>{pending ? "Saving…" : "Set"}</Button>
+        <span role="status" className="text-xs text-brand-strong">{state?.ok && !form.formState.isDirty ? "Saved" : ""}</span>
       </div>
       <FieldError error={errors.monthlyCap} />
     </form>

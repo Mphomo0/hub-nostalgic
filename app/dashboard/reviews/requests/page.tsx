@@ -12,7 +12,7 @@ export default async function RequestsPage({ searchParams }: PageProps<"/dashboa
   const { tdb } = await requireModule("reviews");
   const sp = await searchParams;
   const status = STATUS_OPTIONS.find((o) => o.value === sp.status)?.value as RequestStatus | undefined;
-  const page = Math.max(1, Number(sp.page) || 1);
+  const page = Math.min(10_000, Math.max(1, Math.floor(Number(sp.page)) || 1));
 
   const where = status ? { status } : {};
   const [total, rows] = await Promise.all([
@@ -43,9 +43,9 @@ export default async function RequestsPage({ searchParams }: PageProps<"/dashboa
     <>
       <PageHeader title="Requests" description={`${total} request${total === 1 ? "" : "s"}`} />
       <nav aria-label="Filter by status" className="mb-4 flex flex-wrap gap-2 text-sm">
-        <Link href={href({})} className={cx("rounded-full border px-3 py-1", !status ? "border-brand bg-brand-soft text-brand-strong" : "border-line bg-card")}>All</Link>
+        <Link href={href({})} aria-current={!status ? "page" : undefined} className={cx("rounded-full border px-3 py-1", !status ? "border-brand bg-brand-soft text-brand-strong" : "border-line bg-card")}>All</Link>
         {STATUS_OPTIONS.map((o) => (
-          <Link key={o.value} href={href({ status: o.value })} className={cx("rounded-full border px-3 py-1", status === o.value ? "border-brand bg-brand-soft text-brand-strong" : "border-line bg-card")}>
+          <Link key={o.value} href={href({ status: o.value })} aria-current={status === o.value ? "page" : undefined} className={cx("rounded-full border px-3 py-1", status === o.value ? "border-brand bg-brand-soft text-brand-strong" : "border-line bg-card")}>
             {o.label}
           </Link>
         ))}
@@ -54,7 +54,7 @@ export default async function RequestsPage({ searchParams }: PageProps<"/dashboa
         <EmptyState title="No requests here yet">Send your first review request from the Send requests page.</EmptyState>
       ) : (
         <Table>
-          <thead><tr><th>Customer</th><th>Status</th><th>Rating</th><th>Channel</th><th>Sent by</th><th>Sent</th><th>Rated</th><th>Reminder</th></tr></thead>
+          <thead><tr><th scope="col">Customer</th><th scope="col">Status</th><th scope="col">Rating</th><th scope="col">Channel</th><th scope="col">Sent by</th><th scope="col">Sent</th><th scope="col">Rated</th><th scope="col">Reminder</th></tr></thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.id}>
@@ -78,11 +78,11 @@ export default async function RequestsPage({ searchParams }: PageProps<"/dashboa
         </Table>
       )}
       {pages > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm">
+        <nav aria-label="Pagination" className="mt-4 flex items-center justify-between text-sm">
           {page > 1 ? <Link href={href({ status, page: page - 1 })} className="font-semibold text-brand-strong">← Newer</Link> : <span />}
           <span className="text-muted">Page {page} of {pages}</span>
           {page < pages ? <Link href={href({ status, page: page + 1 })} className="font-semibold text-brand-strong">Older →</Link> : <span />}
-        </div>
+        </nav>
       )}
     </>
   );

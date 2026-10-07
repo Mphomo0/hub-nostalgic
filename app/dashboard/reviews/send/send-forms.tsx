@@ -1,6 +1,6 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
-import Papa from "papaparse";
+import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
@@ -10,31 +10,32 @@ import { normaliseRow, SKIP_REASONS, type IntakeRow } from "@/modules/reviews/li
 import { csvSendFormSchema, manualSendSchema } from "@/modules/reviews/schemas";
 import { sendRequestsAction, type SendSummary } from "./actions";
 
-type Props = { paused: boolean; consentStatement: string; maxRows: number };
+type Props = { tab: "manual" | "csv"; paused: boolean; consentStatement: string; maxRows: number };
 
-export function SendForms({ paused, consentStatement, maxRows }: Props) {
-  const [tab, setTab] = useState<"manual" | "csv">("manual");
+/** The preview table shows problem rows first, then fills up to this many rows. */
+const PREVIEW_LIMIT = 50;
+
+export function SendForms({ tab, paused, consentStatement, maxRows }: Props) {
   const [summary, setSummary] = useState<SendSummary | null>(null);
 
   return (
     <div className="space-y-6">
       {paused && <Notice tone="warn">Sending is disabled while your account is paused.</Notice>}
-      <div role="tablist" aria-label="How to add customers" className="inline-flex rounded-lg border border-line bg-card p-1">
+      <nav aria-label="How to add customers" className="inline-flex rounded-lg border border-line bg-card p-1">
         {(["manual", "csv"] as const).map((t) => (
-          <button
+          <Link
             key={t}
-            role="tab"
-            aria-selected={tab === t}
-            onClick={() => {
-              setTab(t);
-              setSummary(null);
-            }}
+            href={t === "manual" ? "/dashboard/reviews/send" : "/dashboard/reviews/send?tab=csv"}
+            scroll={false}
+            replace
+            aria-current={tab === t ? "page" : undefined}
+            onClick={() => setSummary(null)}
             className={cx("rounded-md px-4 py-2 text-sm font-medium", tab === t ? "bg-brand text-brand-ink" : "text-ink hover:bg-black/5")}
           >
             {t === "manual" ? "One customer" : "Upload CSV"}
-          </button>
+          </Link>
         ))}
-      </div>
+      </nav>
 
       {tab === "manual" ? (
         <ManualForm paused={paused} consentStatement={consentStatement} onDone={setSummary} />
@@ -42,7 +43,7 @@ export function SendForms({ paused, consentStatement, maxRows }: Props) {
         <CsvForm paused={paused} consentStatement={consentStatement} maxRows={maxRows} onDone={setSummary} />
       )}
 
-      {summary && <SummaryView summary={summary} />}
+      <div aria-live="polite">{summary && <SummaryView summary={summary} />}</div>
     </div>
   );
 }
@@ -90,12 +91,12 @@ function ManualForm({ paused, consentStatement, onDone }: { paused: boolean; con
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor="m-phone" hint="(WhatsApp)">Mobile number</Label>
-            <Input id="m-phone" type="tel" inputMode="tel" placeholder="082 123 4567" autoComplete="off" aria-invalid={!!errors.phone} {...register("phone")} />
+            <Input id="m-phone" type="tel" inputMode="tel" placeholder="082 123 4567…" autoComplete="off" aria-invalid={!!errors.phone} {...register("phone")} />
             <FieldError error={errors.phone} />
           </div>
           <div>
             <Label htmlFor="m-email">Email</Label>
-            <Input id="m-email" type="email" autoComplete="off" aria-invalid={!!errors.email} {...register("email")} />
+            <Input id="m-email" type="email" autoComplete="off" spellCheck={false} aria-invalid={!!errors.email} {...register("email")} />
             <FieldError error={errors.email} />
           </div>
         </div>
@@ -125,11 +126,13 @@ function CsvForm({ paused, consentStatement, maxRows, onDone }: { paused: boolea
   });
 
   // Parse and check the file as soon as it's chosen, so problems show before sending.
-  function onFile(file: File | undefined) {
+  async function onFile(file: File | undefined) {
     setPreview(null);
     clearErrors("file");
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) return setError("file", { message: "That file is too big. Max 2 MB." });
+    if (file.size > 2 * 1024 * 1024) return setError("file", { message: "That file is too big. Max 2\u00a0MB." });
+    // Loaded on demand: most people never use the CSV tab.
+    const { default: Papa } = await import("papaparse");
     Papa.parse<Record<string, string>>(file, {
       header: true,
       skipEmptyLines: "greedy",
@@ -137,7 +140,7 @@ function CsvForm({ paused, consentStatement, maxRows, onDone }: { paused: boolea
       complete: (res) => {
         const fields = res.meta.fields ?? [];
         if (!fields.includes("name") || (!fields.includes("phone") && !fields.includes("email"))) {
-          return setError("file", { message: "The CSV needs a 'name' column and a 'phone' and/or 'email' column. Download the template to see the format." });
+          return setError("file", { message: "The CSV needs a “name” column and a “phone” and/or “email” column. Download the template to see the format." });
         }
         if (res.data.length === 0) return setError("file", { message: "No rows found in that file." });
         if (res.data.length > maxRows) return setError("file", { message: `That file has ${res.data.length} rows. The limit is ${maxRows} per upload; please split it.` });
@@ -157,13 +160,15 @@ function CsvForm({ paused, consentStatement, maxRows, onDone }: { paused: boolea
           }),
         );
       },
-      error: () => setError("file", { message: "Couldn't read that file. Make sure it's a .csv." }),
+      error: () => setError("file", { message: "Couldn’t read that file. Make sure it’s a .csv." }),
     });
   }
 
   const valid = preview?.filter((p) => !p.error) ?? [];
   const invalid = preview?.filter((p) => p.error) ?? [];
   const fileField = register("file");
+  const problems = invalid.slice(0, PREVIEW_LIMIT);
+  const shown = preview ? [...problems, ...valid.slice(0, PREVIEW_LIMIT - problems.length)].sort((a, b) => a.index - b.index) : [];
 
   const onSubmit = handleSubmit(async ({ file, consent }) => {
     if (valid.length === 0) return setError("file", { message: "There are no valid rows to send." });
@@ -193,7 +198,7 @@ function CsvForm({ paused, consentStatement, maxRows, onDone }: { paused: boolea
               {...fileField}
               onChange={(e) => {
                 fileField.onChange(e);
-                onFile(e.target.files?.[0]);
+                void onFile(e.target.files?.[0]);
               }}
             />
           </div>
@@ -210,9 +215,9 @@ function CsvForm({ paused, consentStatement, maxRows, onDone }: { paused: boolea
             </div>
             <div className="max-h-96 overflow-auto">
               <Table>
-                <thead><tr><th>Row</th><th>Name</th><th>Phone</th><th>Email</th><th>Check</th></tr></thead>
+                <thead><tr><th scope="col">Row</th><th scope="col">Name</th><th scope="col">Phone</th><th scope="col">Email</th><th scope="col">Check</th></tr></thead>
                 <tbody>
-                  {preview.map((p) => (
+                  {shown.map((p) => (
                     <tr key={p.index} className={p.error ? "bg-danger-soft/50" : undefined}>
                       <td className="tabular-nums text-muted">{p.index + 2}</td>
                       <td>{p.row.name}</td>
@@ -224,6 +229,9 @@ function CsvForm({ paused, consentStatement, maxRows, onDone }: { paused: boolea
                 </tbody>
               </Table>
             </div>
+            {shown.length < preview.length && (
+              <p className="text-xs text-muted">Showing {shown.length} of {preview.length} rows (problem rows first). All {valid.length} valid rows will be sent.</p>
+            )}
             <p className="text-xs text-muted">Row numbers match your spreadsheet (row 1 is the header). Opt-outs, recent contacts and the monthly limit are checked when you send.</p>
             <Consent statement={consentStatement} error={errors.consent} {...register("consent")} />
             <SubmitButton disabled={paused || valid.length === 0} pending={isSubmitting} pendingText="Sending…">
@@ -239,7 +247,7 @@ function CsvForm({ paused, consentStatement, maxRows, onDone }: { paused: boolea
 function SummaryView({ summary }: { summary: SendSummary }) {
   if (!summary.ok) return <Notice tone="error">{summary.error}</Notice>;
   return (
-    <Card aria-live="polite" className="space-y-3">
+    <Card className="space-y-3">
       <h2 className="font-semibold">Summary</h2>
       <div className="flex flex-wrap gap-6 text-sm">
         <span><strong className="text-lg text-brand-strong">{summary.queued}</strong> sending</span>

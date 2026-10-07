@@ -14,10 +14,10 @@ export default async function DashboardHome({ searchParams }: PageProps<"/dashbo
 
   return (
     <>
-      <PageHeader title={`Welcome back, ${firstName}`} description="Here's how things are going across your tools." />
+      <PageHeader title={`Welcome back, ${firstName}`} description="Here’s how things are going across your tools." />
       {offName && (
         <div className="mb-6">
-          <Notice tone="warn">{offName} isn&apos;t switched on for your account. Contact Nostalgic Studio if you&apos;d like to use it.</Notice>
+          <Notice tone="warn">{offName} isn’t switched on for your account. Contact Nostalgic Studio if you’d like to use it.</Notice>
         </div>
       )}
       {modules.length === 0 ? (

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ConfirmAction } from "@/components/confirm-action";
 import { ClientStatusBadge } from "@/components/status";
 import { Badge, Button, Card, Notice, PageHeader, Stat } from "@/components/ui";
 import { formatDate, monthKey } from "@/lib/dates";
@@ -28,10 +29,11 @@ export default async function AdminClientPage({ params, searchParams }: PageProp
 
   const enabled = new Set(client.modules.map((m) => m.module));
   const usage = client.usageCounters[0];
+  const now = new Date();
 
   return (
     <>
-      <Link href="/admin" className="text-sm text-muted hover:text-ink">← Clients</Link>
+      <Link href="/admin" className="text-sm text-muted hover:text-ink"><span aria-hidden="true">←</span> Clients</Link>
       <PageHeader
         title={client.name}
         description={<span className="inline-flex items-center gap-2"><ClientStatusBadge status={client.status} /> Created {formatDate(client.createdAt)}</span>}
@@ -39,7 +41,13 @@ export default async function AdminClientPage({ params, searchParams }: PageProp
           <form action={setClientStatusAction}>
             <input type="hidden" name="clientId" value={client.id} />
             <input type="hidden" name="status" value={client.status === "ACTIVE" ? "PAUSED" : "ACTIVE"} />
-            <Button variant={client.status === "ACTIVE" ? "secondary" : "primary"}>{client.status === "ACTIVE" ? "Pause client" : "Activate client"}</Button>
+            {client.status === "ACTIVE" ? (
+              <ConfirmAction trigger="Pause client" message="Pause this client? They can still log in, but all sending stops until you activate them again.">
+                <Button type="submit" variant="danger" className="w-full">Yes, pause client</Button>
+              </ConfirmAction>
+            ) : (
+              <Button type="submit">Activate client</Button>
+            )}
           </form>
         }
       />
@@ -78,19 +86,19 @@ export default async function AdminClientPage({ params, searchParams }: PageProp
             <ul className="mt-3 divide-y divide-line text-sm">
               {client.memberships.map((m) => (
                 <li key={m.id} className="flex items-center justify-between gap-2 py-2">
-                  <span>
+                  <span className="min-w-0">
                     {m.user.name}
-                    <span className="block text-xs text-muted">{m.user.email}</span>
+                    <span className="block break-all text-xs text-muted">{m.user.email}</span>
                   </span>
                   <Badge tone={m.role === "OWNER" ? "good" : "neutral"}>{m.role === "OWNER" ? "Owner" : "Staff"}</Badge>
                 </li>
               ))}
               {client.invites.map((i) => (
                 <li key={i.id} className="flex items-center justify-between gap-2 py-2 text-muted">
-                  <span>
-                    {i.name} <span className="block text-xs">{i.email}</span>
+                  <span className="min-w-0">
+                    {i.name} <span className="block break-all text-xs">{i.email}</span>
                   </span>
-                  <Badge tone={i.expiresAt < new Date() ? "bad" : "warn"}>{i.expiresAt < new Date() ? "Invite expired" : "Invited"}</Badge>
+                  <Badge tone={i.expiresAt < now ? "bad" : "warn"}>{i.expiresAt < now ? "Invite expired" : "Invited"}</Badge>
                 </li>
               ))}
             </ul>
@@ -101,7 +109,7 @@ export default async function AdminClientPage({ params, searchParams }: PageProp
           </Card>
 
           <Card>
-            <h2 className="font-semibold">Delete a customer&apos;s data (POPIA)</h2>
+            <h2 className="font-semibold">Delete a customer’s data (POPIA)</h2>
             <p className="mt-1 text-sm text-muted">Permanently removes a customer, their review requests and feedback for this client.</p>
             <div className="mt-4"><DeleteCustomerForm clientId={client.id} /></div>
           </Card>

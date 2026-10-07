@@ -17,14 +17,14 @@ export function ReviewSettingsForm({ defaults, disabled }: { defaults: { googleR
         <Card className="space-y-5">
           <div>
             <Label htmlFor="googleReviewUrl" hint="(Google Business Profile → Ask for reviews)">Google review link</Label>
-            <Input id="googleReviewUrl" type="url" aria-invalid={!!errors.googleReviewUrl} {...register("googleReviewUrl")} />
+            <Input id="googleReviewUrl" type="url" autoComplete="off" spellCheck={false} aria-invalid={!!errors.googleReviewUrl} {...register("googleReviewUrl")} />
             <FieldError error={errors.googleReviewUrl} />
           </div>
           <label className="flex items-start gap-3 text-sm">
             <input type="checkbox" className="mt-0.5 size-4 accent-brand" {...register("remindersEnabled")} />
             <span>
               <span className="font-medium">Send one reminder</span>
-              <span className="block text-muted">If a customer hasn&apos;t rated after 3 days, send them one gentle reminder.</span>
+              <span className="block text-muted">If a customer hasn’t rated after 3 days, send them one gentle reminder.</span>
             </span>
           </label>
           <FormMessage state={state} />

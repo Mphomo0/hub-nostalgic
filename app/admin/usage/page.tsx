@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ClientStatusBadge } from "@/components/status";
-import { PageHeader, Table } from "@/components/ui";
-import { monthKey } from "@/lib/dates";
+import { cx, PageHeader, Table } from "@/components/ui";
+import { formatMonth, monthKey } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { CapForm } from "./cap-form";
 
@@ -31,15 +31,15 @@ export default async function UsagePage({ searchParams }: PageProps<"/admin/usag
   return (
     <>
       <PageHeader title="Usage" description="Messages sent per client (requests + reminders). Use this to watch WhatsApp costs and set caps." />
-      <div className="mb-4 flex flex-wrap gap-2 text-sm">
+      <nav aria-label="Month" className="mb-4 flex flex-wrap gap-2 text-sm">
         {months.map((mo) => (
-          <Link key={mo} href={`/admin/usage?month=${mo}`} className={`rounded-full border px-3 py-1 ${mo === month ? "border-brand bg-brand-soft text-brand-strong" : "border-line bg-card"}`}>
-            {mo}
+          <Link key={mo} href={`/admin/usage?month=${mo}`} aria-current={mo === month ? "page" : undefined} className={cx("rounded-full border px-3 py-1", mo === month ? "border-brand bg-brand-soft text-brand-strong" : "border-line bg-card")}>
+            {formatMonth(mo)}
           </Link>
         ))}
-      </div>
+      </nav>
       <Table>
-        <thead><tr><th>Client</th><th>Status</th><th>WhatsApp</th><th>Email</th><th>Total</th><th>Monthly cap</th></tr></thead>
+        <thead><tr><th scope="col">Client</th><th scope="col">Status</th><th scope="col">WhatsApp</th><th scope="col">Email</th><th scope="col">Total</th><th scope="col">Monthly cap</th></tr></thead>
         <tbody>
           {clients.map((c) => {
             const u = c.usageCounters[0];
@@ -51,7 +51,7 @@ export default async function UsagePage({ searchParams }: PageProps<"/admin/usag
                 <td><ClientStatusBadge status={c.status} /></td>
                 <td className="tabular-nums">{u?.whatsappCount ?? 0}</td>
                 <td className="tabular-nums">{u?.emailCount ?? 0}</td>
-                <td className={`tabular-nums font-medium ${over ? "text-danger" : ""}`}>{total}</td>
+                <td className={cx("tabular-nums font-medium", over && "text-danger")}>{total}{over && <span className="ml-2 text-xs">Over cap</span>}</td>
                 <td>
                   <CapForm clientId={c.id} clientName={c.name} monthlyCap={c.monthlyCap} />
                 </td>

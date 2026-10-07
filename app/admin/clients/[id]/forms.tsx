@@ -1,4 +1,5 @@
 "use client";
+import { ConfirmAction } from "@/components/confirm-action";
 import { FieldError, FormMessage, SubmitButton } from "@/components/form-state";
 import { Card, Input, Label, Select } from "@/components/ui";
 import { adminInviteSchema, deleteCustomerSchema, updateClientFormSchema } from "@/lib/schemas";
@@ -35,7 +36,7 @@ export function EditClientForm({ client, logoUrl }: { client: ClientData; logoUr
         <h2 className="font-semibold">Business details</h2>
         <div>
           <Label htmlFor="name">Business name</Label>
-          <Input id="name" aria-invalid={!!errors.name} {...register("name")} />
+          <Input id="name" autoComplete="off" aria-invalid={!!errors.name} {...register("name")} />
           <FieldError error={errors.name} />
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
@@ -53,19 +54,19 @@ export function EditClientForm({ client, logoUrl }: { client: ClientData; logoUr
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <Label htmlFor="contactEmail">Contact email</Label>
-            <Input id="contactEmail" type="email" aria-invalid={!!errors.contactEmail} {...register("contactEmail")} />
+            <Input id="contactEmail" type="email" autoComplete="off" spellCheck={false} aria-invalid={!!errors.contactEmail} {...register("contactEmail")} />
             <FieldError error={errors.contactEmail} />
           </div>
           <div>
             <Label htmlFor="contactPhone">Contact phone</Label>
-            <Input id="contactPhone" aria-invalid={!!errors.contactPhone} {...register("contactPhone")} />
+            <Input id="contactPhone" type="tel" autoComplete="off" aria-invalid={!!errors.contactPhone} {...register("contactPhone")} />
             <FieldError error={errors.contactPhone} />
           </div>
         </div>
         <div className="flex items-center gap-4">
           {logoUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl} alt="Current logo" className="h-12 max-w-32 rounded border border-line object-contain p-1" />
+            <img src={logoUrl} alt="Current logo" width={128} height={48} className="h-12 max-w-32 rounded border border-line object-contain p-1" />
           )}
           <div className="flex-1">
             <Label htmlFor="logo" hint="(replace: PNG/JPG/WebP, max 500 KB)">Logo</Label>
@@ -90,9 +91,9 @@ export function InviteUserForm({ clientId }: { clientId: string }) {
   return (
     <form {...formProps} className="space-y-3">
       <input type="hidden" {...register("clientId")} />
-      <Input placeholder="Name" aria-label="Name" aria-invalid={!!errors.name} {...register("name")} />
+      <Input placeholder="Thandi Nkosi…" aria-label="Name" autoComplete="off" aria-invalid={!!errors.name} {...register("name")} />
       <FieldError error={errors.name} />
-      <Input type="email" placeholder="Email" aria-label="Email" aria-invalid={!!errors.email} {...register("email")} />
+      <Input type="email" placeholder="thandi@example.co.za…" aria-label="Email" autoComplete="off" spellCheck={false} aria-invalid={!!errors.email} {...register("email")} />
       <FieldError error={errors.email} />
       <Select aria-label="Role" {...register("role")}>
         <option value="STAFF">Staff</option>
@@ -105,29 +106,28 @@ export function InviteUserForm({ clientId }: { clientId: string }) {
 }
 
 export function DeleteCustomerForm({ clientId }: { clientId: string }) {
-  const { form, register, state, pending, errors, formProps } = useActionForm({
+  const { register, state, pending, errors, formProps } = useActionForm({
     schema: deleteCustomerSchema,
     action: deleteCustomerDataAction,
     defaultValues: { clientId, contact: "" },
     resetOnSuccess: true,
   });
   return (
-    <form
-      {...formProps}
-      onSubmit={async (e) => {
-        // Validate first, then confirm, then submit.
-        e.preventDefault();
-        if (!(await form.trigger())) return;
-        if (!confirm("Permanently delete this customer's data? This can't be undone.")) return;
-        await formProps.onSubmit(e);
-      }}
-      className="space-y-3"
-    >
+    <form {...formProps} className="space-y-3">
       <input type="hidden" {...register("clientId")} />
-      <Input placeholder="Customer email or phone" aria-label="Customer email or phone" aria-invalid={!!errors.contact} {...register("contact")} />
+      <Input placeholder="Customer email or phone…" aria-label="Customer email or phone" autoComplete="off" spellCheck={false} aria-invalid={!!errors.contact} {...register("contact")} />
       <FieldError error={errors.contact} />
       <FormMessage state={state} />
-      <SubmitButton variant="danger" pending={pending} pendingText="Deleting…" className="w-full">Delete customer data</SubmitButton>
+      {/* The delete button only exists once the warning is open, so it can't be hit by accident, with or without JavaScript. */}
+      <ConfirmAction
+        trigger="Delete customer data"
+        triggerVariant="danger"
+        triggerClassName="w-full"
+        className="relative block"
+        message="Permanently delete this customer’s data? This can’t be undone."
+      >
+        <SubmitButton variant="danger" pending={pending} pendingText="Deleting…" className="w-full">Yes, delete permanently</SubmitButton>
+      </ConfirmAction>
     </form>
   );
 }

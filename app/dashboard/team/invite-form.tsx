@@ -16,12 +16,12 @@ export function InviteStaffForm() {
     <form {...formProps} className="space-y-3">
       <div>
         <Label htmlFor="name">Name</Label>
-        <Input id="name" aria-invalid={!!errors.name} {...register("name")} />
+        <Input id="name" autoComplete="off" aria-invalid={!!errors.name} {...register("name")} />
         <FieldError error={errors.name} />
       </div>
       <div>
         <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email" aria-invalid={!!errors.email} {...register("email")} />
+        <Input id="email" type="email" autoComplete="off" spellCheck={false} aria-invalid={!!errors.email} {...register("email")} />
         <FieldError error={errors.email} />
       </div>
       <FormMessage state={state} />

@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { ButtonLink, Card, cx, PageHeader, Stat } from "@/components/ui";
-import { daysAgo } from "@/lib/dates";
+import { daysAgo, formatNumber } from "@/lib/dates";
 import { requireModule } from "@/lib/session";
+
+export const metadata = { title: "Reviews" };
 
 const RANGES = { "7": "Last 7 days", "30": "Last 30 days", "90": "Last 90 days", all: "All time" } as const;
 type Range = keyof typeof RANGES;
 
-export default async function OverviewPage({ searchParams }: PageProps<"/dashboard">) {
+export default async function OverviewPage({ searchParams }: PageProps<"/dashboard/reviews">) {
   const { tdb } = await requireModule("reviews");
   const sp = await searchParams;
   const range: Range = typeof sp.range === "string" && sp.range in RANGES ? (sp.range as Range) : "30";
@@ -31,17 +33,17 @@ export default async function OverviewPage({ searchParams }: PageProps<"/dashboa
       <PageHeader title="Reviews" description="How your review requests are doing." actions={<ButtonLink href="/dashboard/reviews/send">Send requests</ButtonLink>} />
       <nav aria-label="Date range" className="mb-6 flex flex-wrap gap-2 text-sm">
         {(Object.keys(RANGES) as Range[]).map((r) => (
-          <Link key={r} href={`/dashboard/reviews?range=${r}`} aria-current={r === range ? "true" : undefined} className={cx("rounded-full border px-3 py-1", r === range ? "border-brand bg-brand-soft text-brand-strong" : "border-line bg-card")}>
+          <Link key={r} href={`/dashboard/reviews?range=${r}`} aria-current={r === range ? "page" : undefined} className={cx("rounded-full border px-3 py-1", r === range ? "border-brand bg-brand-soft text-brand-strong" : "border-line bg-card")}>
             {RANGES[r]}
           </Link>
         ))}
       </nav>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Requests sent" value={sent} />
-        <Stat label="Ratings received" value={rated} sub={`${rateOf(rated, sent)} of requests sent`} />
+        <Stat label="Requests sent" value={formatNumber(sent)} />
+        <Stat label="Ratings received" value={formatNumber(rated)} sub={`${rateOf(rated, sent)} of requests sent`} />
         <Stat label="Average rating" value={avg ? avg.toFixed(1) : "—"} sub={avg ? "out of 5" : undefined} />
-        <Stat label="Went to Google" value={clicks} sub={`${rateOf(clicks, rated)} of raters`} />
+        <Stat label="Went to Google" value={formatNumber(clicks)} sub={`${rateOf(clicks, rated)} of raters`} />
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_320px]">
@@ -53,11 +55,14 @@ export default async function OverviewPage({ searchParams }: PageProps<"/dashboa
               const pct = rated ? (count / rated) * 100 : 0;
               return (
                 <li key={star} className="flex items-center gap-3 text-sm">
-                  <span className="w-10 tabular-nums">{star} ★</span>
+                  <span className="w-10 tabular-nums">
+                    <span aria-hidden="true">{star} ★</span>
+                    <span className="sr-only">{star} {star === 1 ? "star" : "stars"}</span>
+                  </span>
                   <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-paper">
                     <span className="block h-full rounded-full bg-star" style={{ width: `${pct}%` }} />
                   </span>
-                  <span className="w-8 text-right tabular-nums text-muted">{count}</span>
+                  <span className="w-8 text-right tabular-nums text-muted">{formatNumber(count)}</span>
                 </li>
               );
             })}
@@ -65,7 +70,7 @@ export default async function OverviewPage({ searchParams }: PageProps<"/dashboa
         </Card>
         <Card>
           <h2 className="font-semibold">Private feedback</h2>
-          <p className="mt-2 text-3xl font-semibold tabular-nums">{unhandled}</p>
+          <p className="mt-2 text-3xl font-semibold tabular-nums">{formatNumber(unhandled)}</p>
           <p className="text-sm text-muted">waiting to be handled</p>
           <Link href="/dashboard/reviews/feedback" className="mt-4 inline-block text-sm font-semibold text-brand-strong underline">Open feedback inbox</Link>
         </Card>

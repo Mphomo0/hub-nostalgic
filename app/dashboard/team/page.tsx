@@ -1,3 +1,4 @@
+import { ConfirmAction } from "@/components/confirm-action";
 import { Badge, Button, Card, Notice, PageHeader } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
 import { requireMember } from "@/lib/session";
@@ -8,6 +9,7 @@ export const metadata = { title: "Team" };
 
 export default async function TeamPage() {
   const { tdb, isOwner, user } = await requireMember();
+  const now = new Date();
   const [members, invites] = await Promise.all([
     tdb.membership.findMany({ orderBy: [{ role: "asc" }, { createdAt: "asc" }], include: { user: { select: { name: true, email: true } } } }),
     tdb.invite.findMany({ where: { acceptedAt: null }, orderBy: { createdAt: "desc" } }),
@@ -21,16 +23,24 @@ export default async function TeamPage() {
           <ul className="divide-y divide-line">
             {members.map((m) => (
               <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-                <div>
-                  <div className="font-medium">{m.user.name}{m.userId === user.id && <span className="text-muted"> (you)</span>}</div>
-                  <div className="text-sm text-muted">{m.user.email} · joined {formatDate(m.createdAt)}</div>
+                <div className="min-w-0">
+                  <div className="break-words font-medium">{m.user.name}{m.userId === user.id && <span className="text-muted"> (you)</span>}</div>
+                  <div className="break-all text-sm text-muted">{m.user.email} · joined {formatDate(m.createdAt)}</div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Badge tone={m.role === "OWNER" ? "good" : "neutral"}>{m.role === "OWNER" ? "Owner" : "Staff"}</Badge>
                   {isOwner && m.role === "STAFF" && (
                     <form action={removeStaffAction}>
                       <input type="hidden" name="membershipId" value={m.id} />
-                      <Button variant="ghost" className="px-2 py-1 text-danger">Remove</Button>
+                      <ConfirmAction
+                        trigger="Remove"
+                        triggerLabel={`Remove ${m.user.name}`}
+                        triggerVariant="ghost"
+                        triggerClassName="px-2 py-1 text-danger"
+                        message={`Remove ${m.user.name}? They will lose access straight away.`}
+                      >
+                        <Button type="submit" variant="danger" className="w-full">Yes, remove</Button>
+                      </ConfirmAction>
                     </form>
                   )}
                 </div>
@@ -38,16 +48,24 @@ export default async function TeamPage() {
             ))}
             {invites.map((i) => (
               <li key={i.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 text-muted">
-                <div>
-                  <div className="font-medium text-ink">{i.name}</div>
-                  <div className="text-sm">{i.email}</div>
+                <div className="min-w-0">
+                  <div className="break-words font-medium text-ink">{i.name}</div>
+                  <div className="break-all text-sm">{i.email}</div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Badge tone={i.expiresAt < new Date() ? "bad" : "warn"}>{i.expiresAt < new Date() ? "Invite expired" : "Invite sent"}</Badge>
+                  <Badge tone={i.expiresAt < now ? "bad" : "warn"}>{i.expiresAt < now ? "Invite expired" : "Invite sent"}</Badge>
                   {isOwner && (
                     <form action={revokeInviteAction}>
                       <input type="hidden" name="inviteId" value={i.id} />
-                      <Button variant="ghost" className="px-2 py-1">Cancel</Button>
+                      <ConfirmAction
+                        trigger="Cancel invite"
+                        triggerLabel={`Cancel invite for ${i.name}`}
+                        triggerVariant="ghost"
+                        triggerClassName="px-2 py-1"
+                        message={`Cancel the invite for ${i.name}? The link in their email will stop working.`}
+                      >
+                        <Button type="submit" variant="danger" className="w-full">Yes, cancel invite</Button>
+                      </ConfirmAction>
                     </form>
                   )}
                 </div>
@@ -58,7 +76,7 @@ export default async function TeamPage() {
         {isOwner ? (
           <Card>
             <h2 className="font-semibold">Invite staff</h2>
-            <p className="mt-1 text-sm text-muted">They&apos;ll get an email to set their password. Re-inviting someone sends a fresh link.</p>
+            <p className="mt-1 text-sm text-muted">They’ll get an email to set their password. Re-inviting someone sends a fresh link.</p>
             <div className="mt-4"><InviteStaffForm /></div>
           </Card>
         ) : (

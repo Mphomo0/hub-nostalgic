@@ -1,4 +1,5 @@
 "use client";
+import { useWatch } from "react-hook-form";
 import { FieldError, FormMessage, SubmitButton } from "@/components/form-state";
 import { Card, Input, Label, Select } from "@/components/ui";
 import { createClientFormSchema } from "@/lib/schemas";
@@ -12,7 +13,7 @@ export function NewClientForm() {
     action: createClientAction,
     defaultValues: { name: "", modules: ["reviews"], googleReviewUrl: "", ownerName: "", ownerEmail: "", brandColor: "#1f6f5c", status: "ACTIVE", contactEmail: "", contactPhone: "" },
   });
-  const selected = form.watch("modules");
+  const selected = useWatch({ control: form.control, name: "modules" });
   const has = (key: string) => (Array.isArray(selected) ? selected.includes(key) : selected === key);
 
   return (
@@ -21,7 +22,7 @@ export function NewClientForm() {
         <h2 className="font-semibold">Business</h2>
         <div>
           <Label htmlFor="name">Business name</Label>
-          <Input id="name" aria-invalid={!!errors.name} {...register("name")} />
+          <Input id="name" autoComplete="off" aria-invalid={!!errors.name} {...register("name")} />
           <FieldError error={errors.name} />
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
@@ -34,7 +35,7 @@ export function NewClientForm() {
             <Label htmlFor="status">Status</Label>
             <Select id="status" {...register("status")}>
               <option value="ACTIVE">Active (can send)</option>
-              <option value="PAUSED">Paused (can log in, can&apos;t send)</option>
+              <option value="PAUSED">Paused (can log in, can’t send)</option>
             </Select>
           </div>
         </div>
@@ -46,12 +47,12 @@ export function NewClientForm() {
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <Label htmlFor="contactEmail" hint="(optional)">Billing / contact email</Label>
-            <Input id="contactEmail" type="email" aria-invalid={!!errors.contactEmail} {...register("contactEmail")} />
+            <Input id="contactEmail" type="email" autoComplete="off" spellCheck={false} aria-invalid={!!errors.contactEmail} {...register("contactEmail")} />
             <FieldError error={errors.contactEmail} />
           </div>
           <div>
             <Label htmlFor="contactPhone" hint="(optional)">Contact phone</Label>
-            <Input id="contactPhone" type="tel" aria-invalid={!!errors.contactPhone} {...register("contactPhone")} />
+            <Input id="contactPhone" type="tel" autoComplete="off" aria-invalid={!!errors.contactPhone} {...register("contactPhone")} />
             <FieldError error={errors.contactPhone} />
           </div>
         </div>
@@ -73,7 +74,7 @@ export function NewClientForm() {
         {has("reviews") && (
           <div>
             <Label htmlFor="googleReviewUrl" hint="(Reviews: from Google Business Profile → Ask for reviews)">Google review link</Label>
-            <Input id="googleReviewUrl" type="url" placeholder="https://g.page/r/…/review" aria-invalid={!!errors.googleReviewUrl} {...register("googleReviewUrl")} />
+            <Input id="googleReviewUrl" type="url" autoComplete="off" spellCheck={false} placeholder="https://g.page/r/…/review" aria-invalid={!!errors.googleReviewUrl} {...register("googleReviewUrl")} />
             <FieldError error={errors.googleReviewUrl} />
           </div>
         )}
@@ -82,12 +83,12 @@ export function NewClientForm() {
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <Label htmlFor="ownerName">Owner name</Label>
-            <Input id="ownerName" aria-invalid={!!errors.ownerName} {...register("ownerName")} />
+            <Input id="ownerName" autoComplete="off" aria-invalid={!!errors.ownerName} {...register("ownerName")} />
             <FieldError error={errors.ownerName} />
           </div>
           <div>
             <Label htmlFor="ownerEmail">Owner email</Label>
-            <Input id="ownerEmail" type="email" aria-invalid={!!errors.ownerEmail} {...register("ownerEmail")} />
+            <Input id="ownerEmail" type="email" autoComplete="off" spellCheck={false} aria-invalid={!!errors.ownerEmail} {...register("ownerEmail")} />
             <FieldError error={errors.ownerEmail} />
           </div>
         </div>

@@ -1,5 +1,6 @@
 "use client";
 import { FieldError, FormMessage, SubmitButton } from "@/components/form-state";
+import { ConfirmAction } from "@/components/confirm-action";
 import { Button, Card, Input, Label } from "@/components/ui";
 import { businessProfileFormSchema } from "@/lib/schemas";
 import { useActionForm } from "@/lib/use-action-form";
@@ -25,7 +26,7 @@ export function SettingsForm({ client, logoUrl, disabled }: Props) {
           <Card className="space-y-5">
             <div>
               <Label htmlFor="name">Business name</Label>
-              <Input id="name" aria-invalid={!!errors.name} {...register("name")} />
+              <Input id="name" autoComplete="organization" aria-invalid={!!errors.name} {...register("name")} />
               <FieldError error={errors.name} />
             </div>
             <div>
@@ -38,7 +39,7 @@ export function SettingsForm({ client, logoUrl, disabled }: Props) {
               <div className="flex items-center gap-4">
                 {logoUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={logoUrl} alt="Current logo" className="h-14 max-w-36 rounded border border-line bg-white object-contain p-1" />
+                  <img src={logoUrl} alt="Current logo" width={144} height={56} className="h-14 max-w-36 rounded border border-line bg-white object-contain p-1" />
                 )}
                 <Input id="logo" type="file" accept="image/png,image/jpeg,image/webp" aria-invalid={!!errors.logo} {...register("logo")} />
               </div>
@@ -51,7 +52,15 @@ export function SettingsForm({ client, logoUrl, disabled }: Props) {
       </form>
       {logoUrl && !disabled && (
         <form action={removeLogoAction}>
-          <Button variant="ghost" className="text-danger">Remove logo</Button>
+          <ConfirmAction
+            trigger="Remove logo"
+            triggerVariant="ghost"
+            triggerClassName="text-danger"
+            className="relative inline-block"
+            message="Remove your logo? Messages and rating pages will go back to showing your business name."
+          >
+            <Button type="submit" variant="danger" className="w-full">Yes, remove logo</Button>
+          </ConfirmAction>
         </form>
       )}
     </div>

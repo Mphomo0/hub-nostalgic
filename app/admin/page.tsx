@@ -28,12 +28,12 @@ export default async function AdminClientsPage() {
         <Table>
           <thead>
             <tr>
-              <th>Business</th>
-              <th>Status</th>
-              <th>Logins</th>
-              <th>This month (WA / email)</th>
-              <th>Cap</th>
-              <th>Created</th>
+              <th scope="col">Business</th>
+              <th scope="col">Status</th>
+              <th scope="col">Logins</th>
+              <th scope="col">This month (WA / email)</th>
+              <th scope="col">Cap</th>
+              <th scope="col">Created</th>
             </tr>
           </thead>
           <tbody>

@@ -5,10 +5,7 @@ import { SettingsForm } from "./settings-form";
 export const metadata = { title: "Business profile" };
 
 export default async function SettingsPage() {
-  const { tdb, isOwner } = await requireMember();
-  const client = await tdb.client.findFirstOrThrow({
-    select: { id: true, name: true, brandColor: true, logo: { select: { updatedAt: true } } },
-  });
+  const { client, isOwner } = await requireMember();
   const logoUrl = client.logo ? `/api/logo/${client.id}?v=${client.logo.updatedAt.getTime()}` : null;
   return (
     <>
