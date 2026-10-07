@@ -47,7 +47,7 @@ export function ContactForm({ initialProducts }: { initialProducts: string[] }) 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" aria-invalid={!!errors.email} {...register("email")} />
+            <Input id="email" type="email" autoComplete="email" spellCheck={false} aria-invalid={!!errors.email} {...register("email")} />
             <FieldError error={errors.email} />
           </div>
           <div>
@@ -70,7 +70,7 @@ export function ContactForm({ initialProducts }: { initialProducts: string[] }) 
         </fieldset>
         <div>
           <Label htmlFor="message">About your business</Label>
-          <Textarea id="message" placeholder="What do you do, and roughly how many customers do you see a month?" aria-invalid={!!errors.message} {...register("message")} />
+          <Textarea id="message" placeholder="What do you do, and roughly how many customers do you see a month…" aria-invalid={!!errors.message} {...register("message")} />
           <FieldError error={errors.message} />
         </div>
         <FormMessage state={state} />

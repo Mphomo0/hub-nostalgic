@@ -21,3 +21,12 @@ export function formatDate(date: Date | null | undefined) {
   if (!date) return "—";
   return new Intl.DateTimeFormat("en-ZA", { timeZone: TIMEZONE, dateStyle: "medium" }).format(date);
 }
+
+/** "October 2026" for a "YYYY-MM" key. */
+export function formatMonth(key: string) {
+  return new Intl.DateTimeFormat("en-ZA", { timeZone: "UTC", month: "long", year: "numeric" }).format(new Date(`${key}-15T12:00:00Z`));
+}
+
+export function formatNumber(n: number) {
+  return new Intl.NumberFormat("en-ZA").format(n);
+}

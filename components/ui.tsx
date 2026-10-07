@@ -7,24 +7,23 @@ export function cx(...classes: (string | false | null | undefined)[]) {
   return classes.filter(Boolean).join(" ");
 }
 
-const buttonStyles = {
+export const buttonStyles = {
   primary: "bg-brand text-brand-ink hover:brightness-110",
   secondary: "bg-card text-ink border border-line hover:bg-paper",
   danger: "bg-danger text-white hover:brightness-110",
   ghost: "text-ink hover:bg-black/5",
 };
 
-export function Button({ variant = "primary", className, ...props }: ComponentProps<"button"> & { variant?: keyof typeof buttonStyles }) {
-  return (
-    <button
-      className={cx(
-        "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50",
-        buttonStyles[variant],
-        className,
-      )}
-      {...props}
-    />
+export function buttonClass(variant: keyof typeof buttonStyles = "primary", className?: string) {
+  return cx(
+    "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50",
+    buttonStyles[variant],
+    className,
   );
+}
+
+export function Button({ variant = "primary", className, ...props }: ComponentProps<"button"> & { variant?: keyof typeof buttonStyles }) {
+  return <button className={buttonClass(variant, className)} {...props} />;
 }
 
 export function ButtonLink({ variant = "primary", className, ...props }: ComponentProps<typeof Link> & { variant?: keyof typeof buttonStyles }) {
@@ -45,7 +44,7 @@ export function Label({ children, htmlFor, hint }: { children: ReactNode; htmlFo
   );
 }
 
-const fieldClass = "w-full rounded-lg border border-line bg-card px-3 py-2.5 text-sm text-ink placeholder:text-muted/70 focus:border-brand focus:outline-none aria-invalid:border-danger";
+const fieldClass = "w-full rounded-lg border border-line bg-card px-3 py-2.5 text-sm text-ink placeholder:text-muted focus-visible:border-brand-strong focus-visible:ring-2 focus-visible:ring-brand-strong/40 focus-visible:outline-none aria-invalid:border-danger";
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
   return <input className={cx(fieldClass, className)} {...props} />;

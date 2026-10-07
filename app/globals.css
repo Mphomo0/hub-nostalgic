@@ -34,12 +34,32 @@
   --color-warn-soft: var(--warn-soft);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-display), Georgia, serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html {
+  color-scheme: light;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   background: var(--paper);
   color: var(--ink);
+}
+
+a,
+button,
+summary,
+label,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
 }
 
 :focus-visible {

@@ -20,7 +20,7 @@ export function RequestStatusBadge({ status }: { status: RequestStatus }) {
 export function Stars({ rating }: { rating: number | null }) {
   if (!rating) return <span className="text-muted">—</span>;
   return (
-    <span aria-label={`${rating} out of 5 stars`} className="whitespace-nowrap">
+    <span role="img" aria-label={`${rating} out of 5 stars`} className="whitespace-nowrap">
       <span className="text-star">{"★".repeat(rating)}</span>
       <span className="text-line">{"★".repeat(5 - rating)}</span>
     </span>

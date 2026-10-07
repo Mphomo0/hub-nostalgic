@@ -28,6 +28,14 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             <Link href="/contact" className="whitespace-nowrap rounded-lg bg-ink px-3 py-2 font-semibold text-paper hover:bg-brand hover:text-brand-ink">Get started</Link>
           </nav>
         </div>
+        <nav aria-label="Products" className="mx-auto flex max-w-6xl gap-4 overflow-x-auto px-4 pb-2 text-sm sm:hidden">
+          {PRODUCTS.map((p) => (
+            <Link key={p.key} href={p.marketing!.href} className="whitespace-nowrap rounded px-2 py-1 hover:text-brand-strong">
+              {p.name}
+            </Link>
+          ))}
+          <Link href="/contact" className="whitespace-nowrap rounded px-2 py-1 hover:text-brand-strong">Contact</Link>
+        </nav>
       </header>
       <main id="main" className="flex-1">{children}</main>
       <footer className="border-t border-line">

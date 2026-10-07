@@ -27,7 +27,7 @@ export function LoginForm() {
       // Only a 401 means wrong details; anything else is a problem on our side.
       setError(
         error.status === 401
-          ? "That email and password don't match."
+          ? "That email and password don’t match."
           : error.status === 429
             ? "Too many attempts. Please wait a minute and try again."
             : "Something went wrong on our side. Please try again in a moment.",
@@ -42,7 +42,7 @@ export function LoginForm() {
     <form onSubmit={onSubmit} noValidate className="mt-6 space-y-4">
       <div>
         <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email" autoComplete="email" aria-invalid={!!errors.email} {...register("email")} />
+        <Input id="email" type="email" autoComplete="email" spellCheck={false} aria-invalid={!!errors.email} {...register("email")} />
         <FieldError error={errors.email} />
       </div>
       <div>

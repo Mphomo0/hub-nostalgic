@@ -99,8 +99,8 @@ export default function HomePage() {
             ))}
             <div className="flex flex-col justify-center rounded-2xl border border-dashed border-line p-6 text-muted">
               <h3 className="font-semibold text-ink">More on the way</h3>
-              <p className="mt-2 text-sm">We&apos;re adding more tools to {PLATFORM_NAME}. Tell us what would help your business most.</p>
-              <Link href="/contact" className="mt-4 text-sm font-semibold text-brand-strong underline">Tell us</Link>
+              <p className="mt-2 text-sm">We’re adding more tools to {PLATFORM_NAME}. Tell us what would help your business most.</p>
+              <Link href="/contact" className="mt-4 text-sm font-semibold text-brand-strong underline">Tell us what you need</Link>
             </div>
           </div>
         </div>
@@ -123,8 +123,8 @@ export default function HomePage() {
       {/* CTA */}
       <section className="mx-auto max-w-6xl px-4 pb-24">
         <div className="rounded-3xl bg-ink px-8 py-14 text-center text-paper">
-          <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Let&apos;s set you up</h2>
-          <p className="mx-auto mt-3 max-w-xl text-paper/75">Tell us about your business and which tools you&apos;re interested in. We&apos;ll come back with pricing and next steps.</p>
+          <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Let’s set you up</h2>
+          <p className="mx-auto mt-3 max-w-xl text-paper/75">Tell us about your business and which tools you’re interested in. We’ll come back with pricing and next steps.</p>
           <Link href="/contact" className="mt-8 inline-block rounded-xl bg-paper px-6 py-3.5 font-semibold text-ink hover:bg-white">
             Contact us for pricing
           </Link>
