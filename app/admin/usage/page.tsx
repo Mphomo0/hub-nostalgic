@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ClientStatusBadge } from "@/components/status";
-import { cx, PageHeader, Table } from "@/components/ui";
-import { formatMonth, monthKey } from "@/lib/dates";
+import { cx, Notice, PageHeader, Table } from "@/components/ui";
+import { formatMonth, formatNumber, monthKey } from "@/lib/dates";
+import { inngestUsageEstimate } from "@/lib/inngest/usage";
 import { db } from "@/lib/db";
 import { CapForm } from "./cap-form";
 
@@ -28,9 +29,25 @@ export default async function UsagePage({ searchParams }: PageProps<"/admin/usag
     { wa: 0, email: 0 },
   );
 
+  // Only the current month is a live estimate; past months are finished.
+  const inngest = month === months[0] ? inngestUsageEstimate(totals.wa + totals.email) : null;
+
   return (
     <>
       <PageHeader title="Usage" description="Messages sent per client (requests + reminders). Use this to watch WhatsApp costs and set caps." />
+      {inngest && (
+        <div className="mb-4">
+          <Notice tone={inngest.level === "critical" ? "error" : inngest.level === "warning" ? "warn" : "info"}>
+            <strong>Background jobs (Inngest):</strong> about {formatNumber(inngest.used)} of {formatNumber(inngest.limit)} runs and steps used this month ({inngest.percent}%).{" "}
+            {inngest.level === "ok"
+              ? "Plenty of room."
+              : inngest.level === "warning"
+                ? "Getting busy. Keep an eye on it."
+                : "Almost full. If Inngest refuses events, requests are still sent directly, but without automatic retries."}{" "}
+            <span className="text-muted">An estimate from messages sent; the real count is under Usage in the Inngest dashboard.</span>
+          </Notice>
+        </div>
+      )}
       <nav aria-label="Month" className="mb-4 flex flex-wrap gap-2 text-sm">
         {months.map((mo) => (
           <Link key={mo} href={`/admin/usage?month=${mo}`} aria-current={mo === month ? "page" : undefined} className={cx("rounded-full border px-3 py-1", mo === month ? "border-brand bg-brand-soft text-brand-strong" : "border-line bg-card")}>
