@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { COMPANY_NAME } from "@/lib/config";
+import { stripPlaceholder } from "@/lib/tokens";
 import { getPublicRequest, isLowRating, markOpened } from "@/modules/reviews/lib/rating";
 import { RatingFlow } from "./rating-flow";
 
@@ -11,7 +12,10 @@ function safeColor(c: string) {
 }
 
 export default async function RatePage({ params }: PageProps<"/r/[token]">) {
-  const { token } = await params;
+  const { token: raw } = await params;
+  // A template button saved without its variable can leave "{{1}}" in front of the token.
+  const token = stripPlaceholder(raw);
+  if (token !== raw) redirect(`/r/${encodeURIComponent(token)}`);
   const req = await getPublicRequest(token);
   if (!req) notFound();
   await markOpened(req.id);

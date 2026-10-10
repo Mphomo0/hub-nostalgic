@@ -9,3 +9,18 @@ export function newToken(bytes = 32) {
 export function sha256(value: string) {
   return createHash("sha256").update(value).digest("hex");
 }
+
+/**
+ * Public links sometimes arrive with the template placeholder still in front of
+ * the token (e.g. "{{1}}abc…") when a WhatsApp template's URL button was saved as
+ * a plain base URL. Remove it so those links still work.
+ */
+export function stripPlaceholder(raw: string) {
+  let value = raw;
+  try {
+    value = decodeURIComponent(raw);
+  } catch {
+    // Not valid percent-encoding: use as is.
+  }
+  return value.replace(/^(\{\{\s*\d+\s*\}\})+/, "");
+}
