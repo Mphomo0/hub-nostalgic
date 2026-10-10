@@ -5,7 +5,10 @@ import { REMINDER_DELAY_DAYS } from "@/modules/reviews/config";
 import { DeliveryError } from "@/lib/messaging/errors";
 import { inngest } from "@/lib/inngest/client";
 import { REVIEW_EVENTS as EVENTS } from "@/modules/reviews/events";
+import { appUrl } from "@/lib/config";
 import { db } from "@/lib/db";
+import { sendEmail } from "@/lib/messaging/email";
+import { collectFailures, summariseFailures } from "@/modules/reviews/lib/alerts";
 import { deliverInitial, deliverReminder, findReminderCandidates, handleWhatsAppDeliveryFailure, type DeliveryKind } from "@/modules/reviews/lib/deliver";
 
 /** Permanent delivery errors shouldn't be retried; transient ones should. */
@@ -63,4 +66,23 @@ export const whatsappFailedFallback = inngest.createFunction(
   },
 );
 
-export const reviewJobs = [sendReviewRequest, dailyReminders, whatsappFailedFallback];
+/**
+ * Hourly: email the platform admin if any sends failed in the last hour or are
+ * stuck in the queue. Sends nothing when all is well.
+ */
+export const failedSendsAlert = inngest.createFunction(
+  { id: "failed-sends-alert", triggers: [{ cron: `TZ=${TIMEZONE} 0 * * * *` }], retries: 2 },
+  async ({ step }) => {
+    const to = process.env.ADMIN_EMAIL?.trim();
+    if (!to) return { alerted: false, reason: "ADMIN_EMAIL is not set" };
+
+    const digest = await step.run("collect", async () => summariseFailures(await collectFailures(new Date()), appUrl("/admin")));
+    if (!digest) return { alerted: false, reason: "nothing to report" };
+
+    const hour = new Date().toISOString().slice(0, 13);
+    await step.run("email", () => sendEmail({ to, subject: digest.subject, html: digest.html, text: digest.text, idempotencyKey: `failed-sends-${hour}` }));
+    return { alerted: true, total: digest.total };
+  },
+);
+
+export const reviewJobs = [sendReviewRequest, dailyReminders, whatsappFailedFallback, failedSendsAlert];

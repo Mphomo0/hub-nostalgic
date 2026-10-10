@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ButtonLink, Card, cx, PageHeader, Stat } from "@/components/ui";
+import { ButtonLink, Card, cx, Notice, PageHeader, Stat } from "@/components/ui";
 import { daysAgo, formatNumber } from "@/lib/dates";
 import { requireModule } from "@/lib/session";
 
@@ -15,12 +15,13 @@ export default async function OverviewPage({ searchParams }: PageProps<"/dashboa
   const since = range === "all" ? undefined : daysAgo(Number(range));
   const inRange = (field: "sentAt" | "ratedAt" | "googleClickedAt") => (since ? { [field]: { gte: since } } : { [field]: { not: null } });
 
-  const [sent, ratings, clicks, distribution, unhandled] = await Promise.all([
+  const [sent, ratings, clicks, distribution, unhandled, failedRecently] = await Promise.all([
     tdb.reviewRequest.count({ where: inRange("sentAt") }),
     tdb.reviewRequest.aggregate({ where: { rating: { not: null }, ...inRange("ratedAt") }, _count: { rating: true }, _avg: { rating: true } }),
     tdb.reviewRequest.count({ where: inRange("googleClickedAt") }),
     tdb.reviewRequest.groupBy({ by: ["rating"], where: { rating: { not: null }, ...inRange("ratedAt") }, _count: { _all: true } }),
     tdb.feedback.count({ where: { handledAt: null } }),
+    tdb.reviewRequest.count({ where: { status: "FAILED", updatedAt: { gte: daysAgo(7) } } }),
   ]);
 
   const rated = ratings._count.rating;
@@ -31,6 +32,14 @@ export default async function OverviewPage({ searchParams }: PageProps<"/dashboa
   return (
     <>
       <PageHeader title="Reviews" description="How your review requests are doing." actions={<ButtonLink href="/dashboard/reviews/send">Send requests</ButtonLink>} />
+      {failedRecently > 0 && (
+        <div className="mb-6">
+          <Notice tone="warn">
+            {formatNumber(failedRecently)} review request{failedRecently === 1 ? "" : "s"} could not be sent in the last 7 days.{" "}
+            <Link href="/dashboard/reviews/requests?status=FAILED" className="font-semibold underline">See what failed</Link>
+          </Notice>
+        </div>
+      )}
       <nav aria-label="Date range" className="mb-6 flex flex-wrap gap-2 text-sm">
         {(Object.keys(RANGES) as Range[]).map((r) => (
           <Link key={r} href={`/dashboard/reviews?range=${r}`} aria-current={r === range ? "page" : undefined} className={cx("rounded-full border px-3 py-1", r === range ? "border-brand bg-brand-soft text-brand-strong" : "border-line bg-card")}>

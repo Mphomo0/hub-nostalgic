@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ClientStatusBadge } from "@/components/status";
-import { ButtonLink, EmptyState, PageHeader, Table } from "@/components/ui";
-import { formatDate, monthKey } from "@/lib/dates";
+import { ButtonLink, cx, EmptyState, PageHeader, Table } from "@/components/ui";
+import { daysAgo, formatDate, monthKey } from "@/lib/dates";
 import { db } from "@/lib/db";
 
 export default async function AdminClientsPage() {
@@ -19,6 +19,13 @@ export default async function AdminClientsPage() {
     },
   });
 
+  const failed = await db.reviewRequest.groupBy({
+    by: ["clientId"],
+    where: { status: "FAILED", updatedAt: { gte: daysAgo(1) } },
+    _count: { _all: true },
+  });
+  const failedBy = new Map(failed.map((f) => [f.clientId, f._count._all]));
+
   return (
     <>
       <PageHeader title="Clients" description={`${clients.length} client${clients.length === 1 ? "" : "s"}`} actions={<ButtonLink href="/admin/clients/new">New client</ButtonLink>} />
@@ -33,6 +40,7 @@ export default async function AdminClientsPage() {
               <th scope="col">Logins</th>
               <th scope="col">This month (WA / email)</th>
               <th scope="col">Cap</th>
+              <th scope="col">Failed (24h)</th>
               <th scope="col">Created</th>
             </tr>
           </thead>
@@ -50,6 +58,7 @@ export default async function AdminClientsPage() {
                   <td className="tabular-nums">{c._count.memberships}</td>
                   <td className="tabular-nums">{u ? `${u.whatsappCount} / ${u.emailCount}` : "0 / 0"}</td>
                   <td className="tabular-nums">{c.monthlyCap ?? "—"}</td>
+                  <td className={cx("tabular-nums", (failedBy.get(c.id) ?? 0) > 0 && "font-medium text-danger")}>{failedBy.get(c.id) ?? 0}</td>
                   <td>{formatDate(c.createdAt)}</td>
                 </tr>
               );
