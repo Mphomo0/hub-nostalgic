@@ -12,6 +12,7 @@ export const reviewsModule = {
     { href: "/dashboard/reviews", label: "Overview" },
     { href: "/dashboard/reviews/send", label: "Send requests" },
     { href: "/dashboard/reviews/requests", label: "Requests" },
+    { href: "/dashboard/reviews/customers", label: "Customers" },
     { href: "/dashboard/reviews/feedback", label: "Feedback" },
     { href: "/dashboard/reviews/settings", label: "Settings" },
   ],
