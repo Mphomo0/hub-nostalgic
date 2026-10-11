@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 const FAQS = [
   {
     q: "How much does it cost?",
-    a: "It's a flat monthly fee, WhatsApp included. Contact us for pricing and we'll set you up.",
+    a: "Contact us for pricing and we'll set you up.",
   },
   {
     q: "Do my customers need to download anything?",
@@ -66,7 +66,7 @@ export default function ReviewsProductPage() {
       areaServed: { "@type": "Country", name: "South Africa" },
       description:
         "Send review requests to customers by WhatsApp or email. Customers rate their experience in seconds and are guided to leave a Google review. Low ratings can also be sent privately to the business.",
-      offers: { "@type": "Offer", description: "One flat monthly fee. Contact us for pricing." },
+      offers: { "@type": "Offer", description: "Contact us for pricing." },
     },
     {
       "@context": "https://schema.org",
@@ -99,7 +99,7 @@ export default function ReviewsProductPage() {
               See how it works
             </Link>
           </div>
-          <p className="mt-4 text-sm text-muted">Flat monthly fee, WhatsApp included. Contact us for pricing.</p>
+          <p className="mt-4 text-sm text-muted">Contact us for pricing.</p>
         </div>
         <HeroVisual />
       </section>

@@ -18,7 +18,7 @@ export default async function ContactPage({ searchParams }: PageProps<"/contact"
           Tell us a little about your business and which tools you&apos;re interested in. We&apos;ll reply with pricing and set up your account, usually within one working day.
         </p>
         <ul className="mt-8 space-y-3 text-sm">
-          <li><strong>Pricing:</strong> a flat monthly fee for the tools you use. Contact us for pricing.</li>
+          <li><strong>Pricing:</strong> contact us and we’ll send you a quote for the tools you need.</li>
           <li><strong>Setup:</strong> we create your account, add your branding, switch on your tools and send you a login.</li>
           <li><strong>No contracts to sign online:</strong> we invoice you monthly.</li>
         </ul>
