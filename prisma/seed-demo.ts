@@ -84,7 +84,8 @@ async function main() {
       contactPhone: "+27215550101",
       logo: { create: await demoLogo() },
       modules: { create: [{ module: "reviews" }] },
-      reviewSettings: { create: { googleReviewUrl: "https://g.page/r/sunrise-hair-studio-demo/review" } },
+      reviewSettings: { create: {} },
+      reviewLocations: { create: [{ name: "Sandton", googleReviewUrl: "https://g.page/r/sunrise-hair-studio-demo/review" }, { name: "Rosebank", googleReviewUrl: "https://g.page/r/sunrise-hair-studio-rosebank-demo/review" }] },
     },
   });
 

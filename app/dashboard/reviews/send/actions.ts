@@ -5,6 +5,7 @@ import { processIntake, SKIP_REASONS, type SkipReason } from "@/modules/reviews/
 import { enqueueSends } from "@/modules/reviews/lib/queue";
 import { sendRequestsSchema } from "@/modules/reviews/schemas";
 import { requireModule } from "@/lib/session";
+import { resolveLocation } from "@/modules/reviews/lib/locations";
 
 export type SendSummary = {
   ok: boolean;
@@ -26,10 +27,14 @@ export async function sendRequestsAction(input: unknown): Promise<SendSummary> {
 
   const parsed = sendRequestsSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input", ...empty };
-  const { rows, source, fileName } = parsed.data;
+  const { rows, source, fileName, locationId: requested } = parsed.data;
+
+  // The branch must belong to this client (never trust the browser's id).
+  const locationId = await resolveLocation(clientId, requested);
+  if (!locationId) return { ok: false, error: requested ? "That branch isn't on your account." : "Choose which branch these customers visited.", ...empty };
 
   const label = source === "csv" ? `CSV upload${fileName ? `: ${fileName}` : ""} (${rows.length} rows)` : "Manual send";
-  const result = await processIntake({ clientId, userId: user.id, consent: true, ip: await clientIp(), batchLabel: label, rows });
+  const result = await processIntake({ clientId, locationId, userId: user.id, consent: true, ip: await clientIp(), batchLabel: label, rows });
 
   let failed = 0;
   try {

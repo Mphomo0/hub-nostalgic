@@ -288,7 +288,7 @@ app/
 components/              shared UI (Button, Card, Table, ConfirmAction, ...)
 ```
 
-**Per-client modules:** `ClientModule` rows record which modules each client has. Admin switches them on per client (the Reviews panel asks for the Google link first). The dashboard sidebar and home page only show a client's modules, and module pages/actions call `requireModule(key)`. Switching a module off keeps its data.
+**Per-client modules:** `ClientModule` rows record which modules each client has. Admin switches them on per client (the Reviews panel asks for the first branch's Google link; a client can have any number of branches, each with its own Google Business Profile. You choose the branch when sending, and customers are sent to that branch's review page). The dashboard sidebar and home page only show a client's modules, and module pages/actions call `requireModule(key)`. Switching a module off keeps its data.
 
 ### Adding a module (e.g. invoicing)
 

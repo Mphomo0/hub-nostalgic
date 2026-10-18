@@ -18,7 +18,7 @@ const DIRECT = new Set([
   // Platform
   "Customer", "ConsentLog", "UsageCounter", "Membership", "Invite", "ClientLogo", "ClientModule",
   // Reviews module
-  "ReviewRequest", "ReviewSettings",
+  "ReviewRequest", "ReviewSettings", "ReviewLocation",
 ]);
 // Models that belong to a tenant through a review request (Reviews module).
 const VIA_REQUEST = new Set(["Feedback", "MessageEvent"]);

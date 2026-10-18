@@ -14,10 +14,10 @@ const { db } = await import("@/lib/db");
 const { deliverInitial, deliverReminder, findReminderCandidates, handleWhatsAppDeliveryFailure } = await import("@/modules/reviews/lib/deliver");
 const { processIntake } = await import("@/modules/reviews/lib/intake");
 const { monthKey } = await import("@/lib/dates");
-const { makeClient, resetDb } = await import("../helpers");
+const { firstLocationId, makeClient, resetDb } = await import("../helpers");
 
 async function queue(clientId: string, userId: string, row: { name: string; phone?: string; email?: string }) {
-  const r = await processIntake({ clientId, userId, consent: true, ip: null, batchLabel: "t", rows: [row] });
+  const r = await processIntake({ clientId, locationId: await firstLocationId(clientId), userId, consent: true, ip: null, batchLabel: "t", rows: [row] });
   return r.queued[0].requestId;
 }
 

@@ -5,22 +5,45 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { FieldError, SubmitButton } from "@/components/form-state";
-import { Card, cx, Input, Label, Notice, Table } from "@/components/ui";
+import { Card, cx, Input, Label, Notice, Select, Table } from "@/components/ui";
 import { normaliseRow, SKIP_REASONS, type IntakeRow } from "@/modules/reviews/lib/normalise";
 import { csvSendFormSchema, manualSendSchema } from "@/modules/reviews/schemas";
 import { sendRequestsAction, type SendSummary } from "./actions";
 
-type Props = { tab: "manual" | "csv"; paused: boolean; consentStatement: string; maxRows: number };
+type Location = { id: string; name: string };
+type Props = { tab: "manual" | "csv"; paused: boolean; consentStatement: string; maxRows: number; locations: Location[] };
+
+type SendFn = (input: { rows: IntakeRow[]; consent: true; source: "manual" | "csv"; fileName?: string }) => Promise<SendSummary>;
+
 
 /** The preview table shows problem rows first, then fills up to this many rows. */
 const PREVIEW_LIMIT = 50;
 
-export function SendForms({ tab, paused, consentStatement, maxRows }: Props) {
+export function SendForms({ tab, paused, consentStatement, maxRows, locations }: Props) {
   const [summary, setSummary] = useState<SendSummary | null>(null);
+  // One branch: nothing to choose. Several: the sender must pick, so a customer
+  // is never sent to the wrong branch's Google profile by default.
+  const multi = locations.length > 1;
+  const [locationId, setLocationId] = useState(multi ? "" : (locations[0]?.id ?? ""));
+  const chooseBranch = setLocationId;
+  const missingBranch = multi && !locationId;
+  const send: SendFn = (input) =>
+    missingBranch
+      ? Promise.resolve({ ok: false, error: "Choose which branch these customers visited.", queued: 0, skipped: [], failed: 0 })
+      : sendRequestsAction({ ...input, locationId: locationId || undefined });
 
   return (
     <div className="space-y-6">
       {paused && <Notice tone="warn">Sending is disabled while your account is paused.</Notice>}
+      {multi && (
+        <div className="max-w-sm">
+          <Label htmlFor="branch" hint="(customers are sent to this branch’s Google page)">Branch</Label>
+          <Select id="branch" value={locationId} onChange={(e) => chooseBranch(e.target.value)}>
+            <option value="">Choose a branch…</option>
+            {locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+          </Select>
+        </div>
+      )}
       <nav aria-label="How to add customers" className="inline-flex rounded-lg border border-line bg-card p-1">
         {(["manual", "csv"] as const).map((t) => (
           <Link
@@ -38,9 +61,9 @@ export function SendForms({ tab, paused, consentStatement, maxRows }: Props) {
       </nav>
 
       {tab === "manual" ? (
-        <ManualForm paused={paused} consentStatement={consentStatement} onDone={setSummary} />
+        <ManualForm paused={paused} consentStatement={consentStatement} onDone={setSummary} send={send} />
       ) : (
-        <CsvForm paused={paused} consentStatement={consentStatement} maxRows={maxRows} onDone={setSummary} />
+        <CsvForm paused={paused} consentStatement={consentStatement} maxRows={maxRows} onDone={setSummary} send={send} />
       )}
 
       <div aria-live="polite">{summary && <SummaryView summary={summary} />}</div>
@@ -62,7 +85,7 @@ function Consent({ statement, error, ...input }: ConsentProps) {
   );
 }
 
-function ManualForm({ paused, consentStatement, onDone }: { paused: boolean; consentStatement: string; onDone: (s: SendSummary) => void }) {
+function ManualForm({ paused, consentStatement, onDone, send }: { paused: boolean; consentStatement: string; onDone: (s: SendSummary) => void; send: SendFn }) {
   const {
     register,
     handleSubmit,
@@ -75,7 +98,7 @@ function ManualForm({ paused, consentStatement, onDone }: { paused: boolean; con
   });
 
   const onSubmit = handleSubmit(async ({ name, phone, email, consent }) => {
-    const result = await sendRequestsAction({ rows: [{ name, phone, email }], consent, source: "manual" });
+    const result = await send({ rows: [{ name, phone, email }], consent: consent as true, source: "manual" });
     onDone(result);
     if (result.ok && result.queued > 0) reset();
   });
@@ -110,7 +133,7 @@ function ManualForm({ paused, consentStatement, onDone }: { paused: boolean; con
 
 type PreviewRow = { index: number; row: IntakeRow; error: string | null };
 
-function CsvForm({ paused, consentStatement, maxRows, onDone }: { paused: boolean; consentStatement: string; maxRows: number; onDone: (s: SendSummary) => void }) {
+function CsvForm({ paused, consentStatement, maxRows, onDone, send }: { paused: boolean; consentStatement: string; maxRows: number; onDone: (s: SendSummary) => void; send: SendFn }) {
   const [preview, setPreview] = useState<PreviewRow[] | null>(null);
   const {
     register,
@@ -172,7 +195,7 @@ function CsvForm({ paused, consentStatement, maxRows, onDone }: { paused: boolea
 
   const onSubmit = handleSubmit(async ({ file, consent }) => {
     if (valid.length === 0) return setError("file", { message: "There are no valid rows to send." });
-    const result = await sendRequestsAction({ rows: valid.map((p) => p.row), consent, source: "csv", fileName: file?.[0]?.name });
+    const result = await send({ rows: valid.map((p) => p.row), consent: consent as true, source: "csv", fileName: file?.[0]?.name });
     // Map server row indexes back to the original file rows.
     result.skipped = result.skipped.map((s) => ({ ...s, rowIndex: valid[s.rowIndex]?.index ?? s.rowIndex }));
     result.skipped.push(...invalid.map((p) => ({ rowIndex: p.index, name: p.row.name ?? "", reason: p.error! })));

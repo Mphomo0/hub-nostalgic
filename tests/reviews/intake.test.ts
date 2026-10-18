@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
 import { monthKey } from "@/lib/dates";
 import { chooseChannel, normaliseRow, processIntake, type IntakeRow } from "@/modules/reviews/lib/intake";
-import { makeClient, resetDb } from "../helpers";
+import { firstLocationId, makeClient, resetDb } from "../helpers";
 
 async function run(clientId: string, userId: string, rows: IntakeRow[], extra: { consent?: boolean; now?: Date } = {}) {
-  return processIntake({ clientId, userId, consent: extra.consent ?? true, ip: "127.0.0.1", batchLabel: "test", rows, now: extra.now });
+  return processIntake({ clientId, locationId: await firstLocationId(clientId), userId, consent: extra.consent ?? true, ip: "127.0.0.1", batchLabel: "test", rows, now: extra.now });
 }
 
 describe("normaliseRow", () => {

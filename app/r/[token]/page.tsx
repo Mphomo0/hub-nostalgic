@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { COMPANY_NAME } from "@/lib/config";
 import { stripPlaceholder } from "@/lib/tokens";
+import { branchLabel } from "@/modules/reviews/lib/locations";
 import { getPublicRequest, isLowRating, markOpened } from "@/modules/reviews/lib/rating";
 import { RatingFlow } from "./rating-flow";
 
@@ -41,7 +42,7 @@ export default async function RatePage({ params }: PageProps<"/r/[token]">) {
             <RatingFlow
               token={token}
               firstName={firstName}
-              businessName={req.client.name}
+              businessName={branchLabel(req.client.name, req.location, req.client._count.reviewLocations)}
               initial={req.rating ? { rating: req.rating, low: isLowRating(req.rating), feedbackSent: req._count.feedback > 0 } : null}
             />
           </div>

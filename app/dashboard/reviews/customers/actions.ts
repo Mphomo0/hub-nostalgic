@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { requireModule } from "@/lib/session";
 import { processIntake } from "@/modules/reviews/lib/intake";
+import { resolveLocation } from "@/modules/reviews/lib/locations";
 import { enqueueSends } from "@/modules/reviews/lib/queue";
 
 const BASE = "/dashboard/reviews/customers";
@@ -25,8 +26,13 @@ export async function sendToCustomerAction(formData: FormData) {
     : null;
   if (!customer) redirect(`${BASE}?error=missing`);
 
+  const requested = String(formData.get("locationId") ?? "");
+  const locationId = await resolveLocation(clientId, /^[0-9a-f-]{36}$/i.test(requested) ? requested : undefined);
+  if (!locationId) redirect(`${BASE}?error=branch`);
+
   const result = await processIntake({
     clientId,
+    locationId,
     userId: user.id,
     consent: true,
     ip: await clientIp(),

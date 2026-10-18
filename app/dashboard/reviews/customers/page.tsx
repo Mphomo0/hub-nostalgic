@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ConfirmAction } from "@/components/confirm-action";
-import { Badge, Button, buttonClass, Card, cx, EmptyState, Input, Notice, PageHeader, Stat } from "@/components/ui";
+import { Badge, Button, buttonClass, Card, cx, EmptyState, Input, Notice, PageHeader, Select, Stat } from "@/components/ui";
 import { CONSENT_STATEMENT } from "@/lib/config";
 import { formatDate, formatNumber } from "@/lib/dates";
 import { requireModule } from "@/lib/session";
@@ -17,6 +17,7 @@ import {
   type CustomerState,
 } from "@/modules/reviews/lib/customers";
 import { SKIP_REASONS, type SkipReason } from "@/modules/reviews/lib/normalise";
+import { listLocations } from "@/modules/reviews/lib/locations";
 import { sendToCustomerAction } from "./actions";
 
 export const metadata = { title: "Customers" };
@@ -34,13 +35,15 @@ const ERRORS: Record<string, string> = {
   rate: "You're sending too quickly. Please wait a minute and try again.",
   consent: "Please tick the consent box before sending.",
   missing: "That customer could not be found.",
+  branch: "Choose which branch the customer visited.",
   queue: "The request could not be added to the send queue. Please try again.",
 };
 
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
 export default async function CustomersPage({ searchParams }: PageProps<"/dashboard/reviews/customers">) {
-  const { tdb } = await requireModule("reviews");
+  const { tdb, clientId } = await requireModule("reviews");
+  const locations = await listLocations(clientId);
   const sp = await searchParams;
   const filter = parseFilter(first(sp.filter));
   const q = (first(sp.q) ?? "").slice(0, 80);
@@ -178,6 +181,12 @@ export default async function CustomersPage({ searchParams }: PageProps<"/dashbo
                           className="relative inline-block"
                         >
                           <input type="hidden" name="customerId" value={c.id} />
+                          {locations.length > 1 && (
+                            <Select name="locationId" required defaultValue="" aria-label="Branch">
+                              <option value="" disabled>Choose a branch…</option>
+                              {locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+                            </Select>
+                          )}
                           <label className="flex items-start gap-2 text-xs text-muted">
                             <input type="checkbox" name="consent" required className="mt-0.5 size-4 shrink-0 accent-brand" />
                             <span>{CONSENT_STATEMENT}</span>

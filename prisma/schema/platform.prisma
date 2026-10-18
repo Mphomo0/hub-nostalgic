@@ -34,8 +34,9 @@ model Client {
   usageCounters UsageCounter[]
 
   // Reviews module
-  reviewSettings ReviewSettings?
-  reviewRequests ReviewRequest[]
+  reviewSettings  ReviewSettings?
+  reviewRequests  ReviewRequest[]
+  reviewLocations ReviewLocation[]
 
   @@map("client")
 }

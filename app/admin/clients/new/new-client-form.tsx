@@ -73,7 +73,7 @@ export function NewClientForm() {
         </fieldset>
         {has("reviews") && (
           <div>
-            <Label htmlFor="googleReviewUrl" hint="(Reviews: from Google Business Profile → Ask for reviews)">Google review link</Label>
+            <Label htmlFor="googleReviewUrl" hint="(first branch; add more branches after creating the client)">Google review link</Label>
             <Input id="googleReviewUrl" type="url" autoComplete="off" spellCheck={false} placeholder="https://g.page/r/…/review" aria-invalid={!!errors.googleReviewUrl} {...register("googleReviewUrl")} />
             <FieldError error={errors.googleReviewUrl} />
           </div>

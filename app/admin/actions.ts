@@ -43,7 +43,9 @@ export async function createClientAction(_prev: FormState, formData: FormData): 
       logo: logo ? { create: logo } : undefined,
       modules: { create: d.modules.map((module) => ({ module })) },
       // Reviews module setup (the schema requires the Google link when Reviews is ticked).
-      reviewSettings: d.modules.includes("reviews") && d.googleReviewUrl ? { create: { googleReviewUrl: d.googleReviewUrl } } : undefined,
+      // The first branch takes the business name; more can be added on the client page.
+      reviewSettings: d.modules.includes("reviews") ? { create: {} } : undefined,
+      reviewLocations: d.modules.includes("reviews") && d.googleReviewUrl ? { create: { name: d.name, googleReviewUrl: d.googleReviewUrl } } : undefined,
     },
   });
 

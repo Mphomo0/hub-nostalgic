@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { acceptInviteSchema, createClientSchema, updateClientSchema } from "@/lib/schemas";
-import { manualSendSchema, reviewSettingsSchema as settingsSchema } from "@/modules/reviews/schemas";
+import { locationSchema, manualSendSchema, reviewSettingsSchema as settingsSchema } from "@/modules/reviews/schemas";
 
 /** The same schemas validate react-hook-form values (browser) and FormData (server). */
 describe("shared form schemas", () => {
-  const base = { googleReviewUrl: "https://g.page/r/x/review" };
+  const base = {};
   const clientBase = { name: "Joe's", brandColor: "#112233" };
 
   it("reads checkboxes from react-hook-form (boolean) and FormData ('on' / missing)", () => {
@@ -25,13 +25,15 @@ describe("shared form schemas", () => {
   });
 
   it("rejects non-https Google links", () => {
-    expect(settingsSchema.safeParse({ ...base, googleReviewUrl: "http://g.page/x" }).success).toBe(false);
+    expect(locationSchema.safeParse({ name: "Sandton", googleReviewUrl: "http://g.page/x" }).success).toBe(false);
+    expect(locationSchema.safeParse({ name: "Sandton", googleReviewUrl: "https://g.page/r/x/review" }).success).toBe(true);
+    expect(locationSchema.safeParse({ name: " ", googleReviewUrl: "https://g.page/r/x/review" }).success).toBe(false);
   });
 
   it("new clients: modules from checkboxes, Google link required only with Reviews", () => {
     const client = { name: "Joe's", ownerName: "Joe", ownerEmail: "joe@example.com", brandColor: "#112233", status: "ACTIVE" };
     // FormData sends one checkbox as a string, several as an array, none as missing.
-    expect(createClientSchema.parse({ ...client, modules: "reviews", googleReviewUrl: base.googleReviewUrl }).modules).toEqual(["reviews"]);
+    expect(createClientSchema.parse({ ...client, modules: "reviews", googleReviewUrl: "https://g.page/r/x/review" }).modules).toEqual(["reviews"]);
     expect(createClientSchema.parse({ ...client }).modules).toEqual([]);
     const noLink = createClientSchema.safeParse({ ...client, modules: ["reviews"], googleReviewUrl: "" });
     expect(noLink.error?.issues[0].path).toEqual(["googleReviewUrl"]);

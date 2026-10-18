@@ -5,10 +5,16 @@ import { normaliseRow, SKIP_REASONS } from "@/modules/reviews/lib/normalise";
 
 /** Reviews module form schemas (browser + server actions). */
 
-/** Reviews settings: Google link and reminders. Used by the client and by admin. */
+/** Reviews settings: reminders. Used by the client and by admin. */
 export const reviewSettingsSchema = z.object({
-  googleReviewUrl,
   remindersEnabled: checkbox,
+});
+
+/** One branch / Google Business Profile. `id` is present when editing. */
+export const locationSchema = z.object({
+  id: z.string().uuid().optional().or(z.literal("")),
+  name: z.string().trim().min(1, "Enter the branch name").max(120, "Keep it under 120 characters"),
+  googleReviewUrl,
 });
 
 /** Consent tick box in the forms (a boolean that must be true). */
@@ -46,6 +52,8 @@ export const sendRequestsSchema = z.object({
     .min(1, "Add at least one customer")
     .max(CSV_MAX_ROWS, `Max ${CSV_MAX_ROWS} rows per upload`),
   consent,
+  /** Which branch's Google profile to send customers to. Optional only when the client has one. */
+  locationId: z.string().uuid().optional(),
   source: z.enum(["manual", "csv"]),
   fileName: z.string().max(200).optional(),
 });

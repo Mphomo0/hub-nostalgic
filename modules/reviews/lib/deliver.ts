@@ -3,6 +3,7 @@ import { reviewsModule } from "@/modules/reviews/module";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/messaging/email";
 import { logoUrlFor } from "@/lib/messaging/email-layout";
+import { branchLabel } from "@/modules/reviews/lib/locations";
 import { reviewRequestEmail } from "@/modules/reviews/emails";
 import { DeliveryError } from "@/lib/messaging/errors";
 import type { Channel } from "@/lib/generated/prisma/client";
@@ -26,8 +27,10 @@ async function loadRequest(requestId: string) {
     where: { id: requestId },
     include: {
       customer: true,
+      location: { select: { name: true } },
       client: {
         select: {
+          _count: { select: { reviewLocations: true } },
           id: true, name: true, status: true, brandColor: true, monthlyCap: true,
           logo: { select: { updatedAt: true } },
           reviewSettings: { select: { remindersEnabled: true } },
@@ -46,7 +49,7 @@ async function sendOn(channel: Channel, req: LoadedRequest, kind: DeliveryKind) 
     if (!req.customer.phoneE164) throw new DeliveryError("Customer has no phone number", true);
     const firstName = req.customer.name.split(" ")[0] || req.customer.name;
     const template = kind === "reminder" ? process.env.WHATSAPP_TEMPLATE_REMINDER ?? "review_reminder" : process.env.WHATSAPP_TEMPLATE_REQUEST ?? "review_request";
-    const { id } = await sendWhatsAppTemplate({ toE164: req.customer.phoneE164, template, bodyParams: [firstName, req.client.name], urlButtonParam: req.token });
+    const { id } = await sendWhatsAppTemplate({ toE164: req.customer.phoneE164, template, bodyParams: [firstName, branchLabel(req.client.name, req.location, req.client._count.reviewLocations)], urlButtonParam: req.token });
     return { provider: "whatsapp", id };
   }
   if (!req.customer.email) throw new DeliveryError("Customer has no email address", true);

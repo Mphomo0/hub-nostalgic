@@ -21,7 +21,8 @@ export async function getPublicRequest(token: string) {
       status: true,
       rating: true,
       customer: { select: { name: true } },
-      client: { select: { id: true, name: true, brandColor: true, logo: { select: { updatedAt: true } } } },
+      location: { select: { name: true } },
+      client: { select: { id: true, name: true, brandColor: true, logo: { select: { updatedAt: true } }, _count: { select: { reviewLocations: true } } } },
       _count: { select: { feedback: true } },
     },
   });
@@ -50,9 +51,15 @@ export async function submitRating(token: string, rating: number, now = new Date
 export async function recordGoogleClick(token: string, now = new Date()) {
   const req = await db.reviewRequest.findUnique({
     where: { token },
-    select: { id: true, googleClickedAt: true, client: { select: { reviewSettings: { select: { googleReviewUrl: true } } } } },
+    select: {
+      id: true,
+      googleClickedAt: true,
+      location: { select: { googleReviewUrl: true } },
+      // Fallback for any request created before branches existed.
+      client: { select: { reviewLocations: { orderBy: { createdAt: "asc" }, take: 1, select: { googleReviewUrl: true } } } },
+    },
   });
-  const url = req?.client.reviewSettings?.googleReviewUrl;
+  const url = req?.location?.googleReviewUrl ?? req?.client.reviewLocations[0]?.googleReviewUrl;
   if (!req || !url) return null;
   if (!req.googleClickedAt) {
     await db.reviewRequest.update({ where: { id: req.id }, data: { googleClickedAt: now, status: "CLICKED_GOOGLE" } });

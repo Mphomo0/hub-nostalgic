@@ -35,6 +35,8 @@ export type IntakeResult = {
 
 export async function processIntake(opts: {
   clientId: string;
+  /** Branch the requests belong to (must belong to the client: callers check this). */
+  locationId: string;
   userId: string;
   consent: boolean;
   ip: string | null;
@@ -128,6 +130,7 @@ export async function processIntake(opts: {
         const request = await tx.reviewRequest.create({
           data: {
             clientId: opts.clientId,
+            locationId: opts.locationId,
             customerId: customer.id,
             sentByUserId: opts.userId,
             channel,
