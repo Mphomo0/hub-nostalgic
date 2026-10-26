@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { ButtonLink, Card, cx, Notice, PageHeader, Stat } from "@/components/ui";
 import { daysAgo, formatNumber } from "@/lib/dates";
 import { requireModule } from "@/lib/session";
+import type { MemberContext } from "@/lib/session";
 
 export const metadata = { title: "Reviews" };
 
@@ -12,6 +14,44 @@ export default async function OverviewPage({ searchParams }: PageProps<"/dashboa
   const { tdb } = await requireModule("reviews");
   const sp = await searchParams;
   const range: Range = typeof sp.range === "string" && sp.range in RANGES ? (sp.range as Range) : "30";
+
+  // The header and range picker render straight away; the numbers stream in behind them.
+  return (
+    <>
+      <PageHeader title="Reviews" description="How your review requests are doing." actions={<ButtonLink href="/dashboard/reviews/send">Send requests</ButtonLink>} />
+      <nav aria-label="Date range" className="mb-6 flex flex-wrap gap-2 text-sm">
+        {(Object.keys(RANGES) as Range[]).map((r) => (
+          <Link key={r} href={`/dashboard/reviews?range=${r}`} aria-current={r === range ? "page" : undefined} className={cx("rounded-full border px-3 py-1", r === range ? "border-brand bg-brand-soft text-brand-strong" : "border-line bg-card")}>
+            {RANGES[r]}
+          </Link>
+        ))}
+      </nav>
+
+      <Suspense key={range} fallback={<OverviewSkeleton />}>
+        <OverviewStats tdb={tdb} range={range} />
+      </Suspense>
+    </>
+  );
+}
+
+function OverviewSkeleton() {
+  return (
+    <div role="status" aria-live="polite" className="animate-pulse space-y-4">
+      <span className="sr-only">Loading your numbers…</span>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="h-24 rounded-xl border border-line bg-card" />
+        ))}
+      </div>
+      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+        <div className="h-56 rounded-xl border border-line bg-card" />
+        <div className="h-56 rounded-xl border border-line bg-card" />
+      </div>
+    </div>
+  );
+}
+
+async function OverviewStats({ tdb, range }: { tdb: MemberContext["tdb"]; range: Range }) {
   const since = range === "all" ? undefined : daysAgo(Number(range));
   const inRange = (field: "sentAt" | "ratedAt" | "googleClickedAt") => (since ? { [field]: { gte: since } } : { [field]: { not: null } });
 
@@ -31,7 +71,6 @@ export default async function OverviewPage({ searchParams }: PageProps<"/dashboa
 
   return (
     <>
-      <PageHeader title="Reviews" description="How your review requests are doing." actions={<ButtonLink href="/dashboard/reviews/send">Send requests</ButtonLink>} />
       {failedRecently > 0 && (
         <div className="mb-6">
           <Notice tone="warn">
@@ -40,14 +79,6 @@ export default async function OverviewPage({ searchParams }: PageProps<"/dashboa
           </Notice>
         </div>
       )}
-      <nav aria-label="Date range" className="mb-6 flex flex-wrap gap-2 text-sm">
-        {(Object.keys(RANGES) as Range[]).map((r) => (
-          <Link key={r} href={`/dashboard/reviews?range=${r}`} aria-current={r === range ? "page" : undefined} className={cx("rounded-full border px-3 py-1", r === range ? "border-brand bg-brand-soft text-brand-strong" : "border-line bg-card")}>
-            {RANGES[r]}
-          </Link>
-        ))}
-      </nav>
-
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Requests sent" value={formatNumber(sent)} />
         <Stat label="Ratings received" value={formatNumber(rated)} sub={`${rateOf(rated, sent)} of requests sent`} />

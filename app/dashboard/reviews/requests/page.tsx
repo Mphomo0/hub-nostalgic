@@ -11,11 +11,12 @@ const PAGE_SIZE = 50;
 
 export default async function RequestsPage({ searchParams }: PageProps<"/dashboard/reviews/requests">) {
   const { tdb, clientId } = await requireModule("reviews");
-  const locations = await listLocations(clientId);
+  const locationsPromise = listLocations(clientId);
   const sp = await searchParams;
   const status = STATUS_OPTIONS.find((o) => o.value === sp.status)?.value as RequestStatus | undefined;
   const page = Math.min(10_000, Math.max(1, Math.floor(Number(sp.page)) || 1));
 
+  const locations = await locationsPromise;
   const branch = locations.find((l) => l.id === sp.branch)?.id;
   const where = { ...(status ? { status } : {}), ...(branch ? { locationId: branch } : {}) };
   const [total, rows] = await Promise.all([

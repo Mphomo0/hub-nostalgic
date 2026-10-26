@@ -1,15 +1,11 @@
 "use client";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useRef } from "react";
-
-gsap.registerPlugin(ScrollTrigger, useGSAP);
+import { useEffect, useRef } from "react";
 
 /**
  * "How it works": three steps, each with a small scene that animates in 3D
  * space as it scrolls into view (GSAP ScrollTrigger). The text is plain HTML
  * and fully visible without JavaScript; motion is skipped for reduced-motion users.
+ * GSAP is imported on demand so it stays out of the initial page bundle.
  */
 
 const STEPS = [
@@ -72,10 +68,16 @@ function StepArt({ step }: { step: number }) {
 export function HowItWorks() {
   const root = useRef<HTMLDivElement>(null);
 
-  useGSAP(
-    () => {
-      const mm = gsap.matchMedia();
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let cancelled = false;
+    let revert: (() => void) | undefined;
+
+    (async () => {
+      const [{ default: gsap }, { ScrollTrigger }] = await Promise.all([import("gsap"), import("gsap/ScrollTrigger")]);
+      if (cancelled || !root.current) return;
+      gsap.registerPlugin(ScrollTrigger);
+      const ctx = gsap.context(() => {
         gsap.utils.toArray<HTMLElement>("[data-step]").forEach((el, i) => {
           const art = el.querySelector("[data-art]");
           const tl = gsap.timeline({ scrollTrigger: { trigger: el, start: "top 80%", end: "top 35%", scrub: 0.6 } });
@@ -84,11 +86,15 @@ export function HowItWorks() {
           if (i === 1) tl.fromTo(el.querySelectorAll('[data-anim="star"]'), { scale: 0.2, opacity: 0.15, transformOrigin: "center" }, { scale: 1, opacity: 1, stagger: 0.15 }, "<0.1");
           if (i === 2) tl.fromTo(el.querySelector('[data-anim="cta"]'), { scaleX: 0, transformOrigin: "left center" }, { scaleX: 1 }, "<0.3");
         });
-      });
-      return () => mm.revert();
-    },
-    { scope: root },
-  );
+      }, root);
+      revert = () => ctx.revert();
+    })();
+
+    return () => {
+      cancelled = true;
+      revert?.();
+    };
+  }, []);
 
   return (
     <div ref={root} className="grid gap-6 md:grid-cols-3">

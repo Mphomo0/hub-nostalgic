@@ -9,8 +9,7 @@ export const metadata = { title: "Send requests" };
 
 export default async function SendPage({ searchParams }: PageProps<"/dashboard/reviews/send">) {
   const { client, clientId } = await requireModule("reviews");
-  const locations = await listLocations(clientId);
-  const { tab } = await searchParams;
+  const [locations, { tab }] = await Promise.all([listLocations(clientId), searchParams]);
   return (
     <>
       <PageHeader

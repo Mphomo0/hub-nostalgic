@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { acceptInviteSchema, createClientSchema, updateClientSchema } from "@/lib/schemas";
-import { locationSchema, manualSendSchema, reviewSettingsSchema as settingsSchema } from "@/modules/reviews/schemas";
+import { locationSchema, reviewSettingsSchema as settingsSchema } from "@/modules/reviews/schemas";
+import { manualSendSchema } from "@/modules/reviews/send-schema";
 
 /** The same schemas validate react-hook-form values (browser) and FormData (server). */
 describe("shared form schemas", () => {

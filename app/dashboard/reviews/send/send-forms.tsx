@@ -7,7 +7,8 @@ import type { z } from "zod";
 import { FieldError, SubmitButton } from "@/components/form-state";
 import { Card, cx, Input, Label, Notice, Select, Table } from "@/components/ui";
 import { normaliseRow, SKIP_REASONS, type IntakeRow } from "@/modules/reviews/lib/normalise";
-import { csvSendFormSchema, manualSendSchema } from "@/modules/reviews/schemas";
+import { manualSendSchema } from "@/modules/reviews/send-schema";
+import { csvSendFormSchema } from "@/modules/reviews/schemas";
 import { sendRequestsAction, type SendSummary } from "./actions";
 
 type Location = { id: string; name: string };

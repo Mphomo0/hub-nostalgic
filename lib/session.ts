@@ -20,11 +20,16 @@ export async function requireUser() {
   return session.user;
 }
 
+/** Fresh platform-admin flag (not the session's copy). Cached per request. */
+const isPlatformAdmin = cache(async (userId: string) => {
+  const fresh = await db.user.findUnique({ where: { id: userId }, select: { isPlatformAdmin: true } });
+  return Boolean(fresh?.isPlatformAdmin);
+});
+
 /** Platform admin (Nostalgic Studio) or 404-style redirect. */
 export async function requireAdmin() {
   const user = await requireUser();
-  const fresh = await db.user.findUnique({ where: { id: user.id }, select: { isPlatformAdmin: true } });
-  if (!fresh?.isPlatformAdmin) redirect("/dashboard");
+  if (!(await isPlatformAdmin(user.id))) redirect("/dashboard");
   return user;
 }
 
@@ -49,8 +54,7 @@ export async function requireMember(opts: { ownerOnly?: boolean } = {}) {
   const user = await requireUser();
   const membership = await getMembership(user.id);
   if (!membership) {
-    const fresh = await db.user.findUnique({ where: { id: user.id }, select: { isPlatformAdmin: true } });
-    redirect(fresh?.isPlatformAdmin ? "/admin" : "/login?error=no-client");
+    redirect((await isPlatformAdmin(user.id)) ? "/admin" : "/login?error=no-client");
   }
   if (opts.ownerOnly && membership.role !== "OWNER") redirect("/dashboard");
   return {

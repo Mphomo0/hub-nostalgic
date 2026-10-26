@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { checkbox, googleReviewUrl } from "@/lib/schemas";
 import { CSV_MAX_ROWS } from "@/modules/reviews/config";
-import { normaliseRow, SKIP_REASONS } from "@/modules/reviews/lib/normalise";
 
 /** Reviews module form schemas (browser + server actions). */
 
@@ -18,24 +17,9 @@ export const locationSchema = z.object({
 });
 
 /** Consent tick box in the forms (a boolean that must be true). */
-const consentCheckbox = z.boolean().refine((v) => v, "Please tick the consent box");
+export const consentCheckbox = z.boolean().refine((v) => v, "Please tick the consent box");
 /** Consent as received by the server action. */
 const consent = z.literal(true, "Please tick the consent box");
-
-/** One customer, checked with the same rules the server uses (modules/reviews/lib/normalise.ts). */
-export const manualSendSchema = z
-  .object({
-    name: z.string().max(120),
-    phone: z.string().max(50),
-    email: z.string().max(254),
-    consent: consentCheckbox,
-  })
-  .superRefine((row, ctx) => {
-    const n = normaliseRow(row);
-    if (n.ok) return;
-    const path = { MISSING_NAME: "name", INVALID_PHONE: "phone", INVALID_EMAIL: "email", NO_CONTACT: "phone" }[n.reason as string] ?? "name";
-    ctx.addIssue({ code: "custom", path: [path], message: SKIP_REASONS[n.reason] });
-  });
 
 export const csvSendFormSchema = z.object({
   file: z

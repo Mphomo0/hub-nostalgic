@@ -43,15 +43,17 @@ const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v
 
 export default async function CustomersPage({ searchParams }: PageProps<"/dashboard/reviews/customers">) {
   const { tdb, clientId } = await requireModule("reviews");
-  const locations = await listLocations(clientId);
+  const locationsPromise = listLocations(clientId);
   const sp = await searchParams;
   const filter = parseFilter(first(sp.filter));
   const q = (first(sp.q) ?? "").slice(0, 80);
   const page = Math.min(10_000, Math.max(1, Math.floor(Number(first(sp.page))) || 1));
   const where = customerWhere(filter, q);
 
-  const [total, customers, counts] = await Promise.all([
-    tdb.customer.count({ where }),
+  // Without a search term, the list total is exactly the filter's chip count, so skip the duplicate query.
+  const [locations, searchTotal, customers, counts] = await Promise.all([
+    locationsPromise,
+    q.trim() ? tdb.customer.count({ where }) : null,
     tdb.customer.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -65,6 +67,7 @@ export default async function CustomersPage({ searchParams }: PageProps<"/dashbo
     Promise.all(CUSTOMER_FILTERS.map((f) => tdb.customer.count({ where: customerWhere(f) }))),
   ]);
   const countOf = Object.fromEntries(CUSTOMER_FILTERS.map((f, i) => [f, counts[i]])) as Record<CustomerFilter, number>;
+  const total = searchTotal ?? countOf[filter];
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const now = new Date();
 
