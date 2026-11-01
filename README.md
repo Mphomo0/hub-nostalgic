@@ -80,7 +80,7 @@ Everything below is already set up. This section records how it was done, so it 
 | Background jobs | **Inngest** (Vercel integration) | App id `review-platform`, synced at `/api/inngest`. Hobby (free) plan. |
 | Rate limiting | **Upstash Redis** (Vercel integration) | Free plan, `autoUpgrade` off. The integration sets `KV_REST_API_*`; the code accepts those and `UPSTASH_REDIS_REST_*`. |
 | WhatsApp | **Meta WhatsApp Cloud API** | See [WhatsApp setup](#whatsapp-setup). |
-| Uptime | **UptimeRobot** (free) | Checks `/api/health` every 5 minutes, emails on failure and recovery. |
+| Uptime | **UptimeRobot** (free) | Checks `/api/health` every 5 minutes, emails on failure and recovery. That check does not touch the database (see [Monitoring](#monitoring)). |
 
 ### Deploying
 
@@ -184,7 +184,8 @@ Body variables: `{{1}}` = customer first name, `{{2}}` = client business name. T
 
 | What | How | Alerts |
 |---|---|---|
-| Site and database up | `GET /api/health` returns `200 {"status":"ok"}` or `503`. UptimeRobot checks it every 5 minutes. | Email to the account owner |
+| Site up | `GET /api/health` returns `200 {"status":"ok"}`. It does **not** query the database. UptimeRobot checks it every 5 minutes. | Email to the account owner |
+| Database up (manual) | `GET /api/health?db=1` also runs `SELECT 1`; `503` if the database is unreachable. **Never point a frequent monitor at it:** Neon suspends an idle database after 5 minutes, and a query every 5 minutes keeps it awake 24/7, which uses up the free plan's monthly compute hours and gets the database stopped until the next month (this happened in October 2026). | — |
 | Failed or stuck sends | Inngest job `failed-sends-alert`, every hour. Reports requests that failed in the last hour, and requests stuck in the queue for 30+ minutes. Sends nothing when all is well. | Email to `ADMIN_EMAIL` |
 | Failures per client | `/admin` has a **Failed (24h)** column. Each client's Reviews overview warns about failures in the last 7 days. | In-app |
 | Inngest usage | `/admin/usage` shows an estimate of runs and steps against `INNGEST_MONTHLY_EXECUTIONS`. | In-app (amber at 70%, red at 90%) |
