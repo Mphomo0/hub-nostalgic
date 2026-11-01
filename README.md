@@ -30,8 +30,8 @@ foundations: logins, teams, branding, customers and messaging.
 ```bash
 npm install
 cp .env.example .env          # then fill in values (see below)
-npx prisma dev -n nostalgic --detach        # local Postgres; put the printed URL in DATABASE_URL + DIRECT_URL
-npx prisma dev -n nostalgic-test --detach   # second, throwaway Postgres for tests → TEST_DATABASE_URL
+./node_modules/.bin/prisma dev -n nostalgic --detach        # local Postgres; put the printed URL in DATABASE_URL + DIRECT_URL
+./node_modules/.bin/prisma dev -n nostalgic-test --detach   # second, throwaway Postgres for tests → TEST_DATABASE_URL
 npm run db:migrate            # create tables
 npm run db:seed               # creates the platform admin from ADMIN_EMAIL / ADMIN_PASSWORD
 npm run dev
@@ -39,7 +39,7 @@ npm run dev
 
 Log in at `/login` with the admin account, then go to `/admin`.
 
-`npm run dev` and `npm test` start the local databases for you (they stop when your computer restarts). If you see "Something went wrong on our side" when logging in locally, the database isn't running: run `npx prisma dev start nostalgic`. Run `npm run db:migrate` after pulling changes.
+`npm run dev` and `npm test` start the local databases for you (they stop when your computer restarts). Run `prisma dev` from `./node_modules/.bin/` rather than through `npx`: `npx` passes the `allow-scripts` setting from `~/.npmrc` to Prisma's own `npm install`, which newer npm rejects (`EALLOWSCRIPTS`). The `predev`/`pretest` scripts drop that setting for the same reason. If you see "Something went wrong on our side" when logging in locally, the database isn't running: run `./node_modules/.bin/prisma dev start nostalgic`. Run `npm run db:migrate` after pulling changes.
 
 > **Local `.env` and production.** Keep local database URLs in `.env` for development. Do not point `DATABASE_URL` at the production Neon database while developing, and never run `db:seed:demo` or the tests against it.
 
@@ -209,7 +209,7 @@ The usage figure is an estimate from messages sent. The real number is in the In
 | WhatsApp verification fails in Meta | `WHATSAPP_VERIFY_TOKEN` in Vercel differs from the one entered in Meta, or the deployment doesn't have the latest value yet. |
 | Email invite links point to the wrong address | `APP_URL` is wrong. Fix it and redeploy. |
 | No emails arrive | Check `RESEND_API_KEY` / `EMAIL_FROM`, and the domain status in Resend. |
-| Logging in fails locally | Local database isn't running: `npx prisma dev start nostalgic`. |
+| Logging in fails locally | Local database isn't running: `./node_modules/.bin/prisma dev start nostalgic`. |
 
 ### Reading the production logs
 
