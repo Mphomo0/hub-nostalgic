@@ -5,11 +5,12 @@ import { usePathname } from "next/navigation";
 const LINKS = [
   { href: "/admin", label: "Clients", exact: false },
   { href: "/admin/usage", label: "Usage", exact: false },
+  { href: "/admin/enquiries", label: "Enquiries", exact: false },
 ];
 
 export function AdminNav() {
   const pathname = usePathname();
-  // "/admin" is also the parent of "/admin/usage", so it only matches itself and client pages.
+  // "/admin" is also the parent of the other admin pages, so it only matches itself and client pages.
   const active = (href: string) => (href === "/admin" ? pathname === "/admin" || pathname.startsWith("/admin/clients") : pathname.startsWith(href));
   return (
     <nav aria-label="Admin" className="flex gap-4 text-sm">
