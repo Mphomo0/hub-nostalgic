@@ -8,12 +8,17 @@ import { AVAILABLE_MODULES } from "@/modules/catalog";
 import { useActionForm } from "@/lib/use-action-form";
 import { enquiryAction } from "./actions";
 
+// The honeypot is checked on the server only. If the browser rejected it, a
+// filled-in trap (by a bot, autofill or a form-filler extension) would block
+// the submit with an error on a field nobody can see.
+const clientSchema = enquirySchema.omit({ website: true });
+
 export function ContactForm({ initialProducts }: { initialProducts: string[] }) {
   const [startedAt] = useState(() => Date.now());
   const { form, register, state, pending, errors, formProps } = useActionForm({
-    schema: enquirySchema,
+    schema: clientSchema,
     action: enquiryAction,
-    defaultValues: { name: "", business: "", email: "", phone: "", message: "", website: "", startedAt, products: initialProducts.filter((p) => AVAILABLE_MODULES.some((m) => m.key === p)) },
+    defaultValues: { name: "", business: "", email: "", phone: "", message: "", startedAt, products: initialProducts.filter((p) => AVAILABLE_MODULES.some((m) => m.key === p)) },
   });
 
   // Turnstile tokens are single-use, so get a fresh one after every attempt.
@@ -37,7 +42,7 @@ export function ContactForm({ initialProducts }: { initialProducts: string[] }) 
         {/* Honeypot: hidden from people, bots tend to fill it in. */}
         <div aria-hidden="true" className="absolute -left-[9999px]">
           <label htmlFor="website">Website</label>
-          <input id="website" tabIndex={-1} autoComplete="off" {...register("website")} />
+          <input id="website" name="website" tabIndex={-1} autoComplete="off" defaultValue="" />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
