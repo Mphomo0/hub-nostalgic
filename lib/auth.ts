@@ -1,11 +1,13 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
+import { captcha } from "better-auth/plugins";
 import { appUrl } from "@/lib/config";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/messaging/email";
 import { passwordResetEmail } from "@/lib/messaging/templates";
 import { authRateLimitStorage } from "@/lib/rate-limit";
+import { expectedTurnstileAction, TURNSTILE_SECRET_KEY } from "@/lib/turnstile";
 
 /**
  * Better Auth handles passwords, sessions and login rate limiting.
@@ -56,8 +58,16 @@ export const auth = betterAuth({
   advanced: {
     database: { generateId: "uuid" },
   },
-  // Must be last: lets server actions set auth cookies.
-  plugins: [nextCookies()],
+  plugins: [
+    // Cloudflare Turnstile on login and forgot-password requests from the browser
+    // (the client sends the token in the x-captcha-response header). Only HTTP
+    // requests are checked; server-side auth.api calls (e.g. invite sign-in) are not.
+    ...(TURNSTILE_SECRET_KEY
+      ? [captcha({ provider: "cloudflare-turnstile", secretKey: TURNSTILE_SECRET_KEY, endpoints: ["/sign-in/email", "/request-password-reset"], expectedAction: expectedTurnstileAction("auth") })]
+      : []),
+    // Must be last: lets server actions set auth cookies.
+    nextCookies(),
+  ],
 });
 
 export type AuthSession = typeof auth.$Infer.Session;

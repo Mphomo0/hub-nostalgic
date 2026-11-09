@@ -1,9 +1,10 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { FieldError, SubmitButton } from "@/components/form-state";
+import { Turnstile, turnstileEnabled, type TurnstileHandle } from "@/components/turnstile";
 import { Input, Label, Notice } from "@/components/ui";
 import { authClient } from "@/lib/auth-client";
 import { forgotPasswordSchema } from "@/lib/schemas";
@@ -11,22 +12,40 @@ import { forgotPasswordSchema } from "@/lib/schemas";
 export function ForgotPasswordForm() {
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captcha = useRef<TurnstileHandle>(null);
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<z.input<typeof forgotPasswordSchema>>({ resolver: zodResolver(forgotPasswordSchema), mode: "onTouched", defaultValues: { email: "" } });
 
-  const onSubmit = handleSubmit(async ({ email }) => {
+  const submit = async ({ email }: z.input<typeof forgotPasswordSchema>) => {
     setError(null);
-    const { error } = await authClient.requestPasswordReset({ email });
+    if (turnstileEnabled && !captchaToken) {
+      setError("Please complete the security check below.");
+      return;
+    }
+    const { error } = await authClient.requestPasswordReset({
+      email,
+      fetchOptions: captchaToken ? { headers: { "x-captcha-response": captchaToken } } : undefined,
+    });
     if (error) {
-      setError(error.status === 429 ? "Too many requests. Please wait a few minutes and try again." : "Something went wrong. Please try again.");
+      captcha.current?.reset(); // tokens are single-use
+      setError(
+        error.status === 429
+          ? "Too many requests. Please wait a few minutes and try again."
+          : error.status === 400 || error.status === 403
+            ? "The security check didn’t go through. Please try again."
+            : "Something went wrong. Please try again.",
+      );
       return;
     }
     // Same message whether or not the account exists, so emails can't be probed.
     setSentTo(email);
-  });
+  };
+  // Wrapped so the captcha ref is only read when the form is submitted.
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => handleSubmit(submit)(event);
 
   if (sentTo) {
     return (
@@ -45,6 +64,7 @@ export function ForgotPasswordForm() {
         <Input id="email" type="email" autoComplete="email" aria-invalid={!!errors.email} {...register("email")} />
         <FieldError error={errors.email} />
       </div>
+      <Turnstile ref={captcha} action="auth" onToken={setCaptchaToken} />
       {error && <p role="alert" className="text-sm text-danger">{error}</p>}
       <SubmitButton className="w-full" pending={isSubmitting} pendingText="Sending…">Send reset link</SubmitButton>
     </form>

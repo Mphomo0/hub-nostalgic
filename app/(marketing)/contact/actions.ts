@@ -5,6 +5,7 @@ import { sendEmail } from "@/lib/messaging/email";
 import { enquiryEmail } from "@/lib/messaging/templates";
 import { rateLimitByIp } from "@/lib/rate-limit";
 import { enquirySchema } from "@/lib/schemas";
+import { TURNSTILE_FIELD, verifyTurnstile } from "@/lib/turnstile";
 import { getModule } from "@/modules/catalog";
 import { fieldErrors, formObject } from "@/lib/validation";
 
@@ -17,6 +18,7 @@ export async function enquiryAction(_prev: FormState, formData: FormData): Promi
   }
   const d = parsed.data;
   if (Date.now() - d.startedAt < 3000) return { ok: true, message: "Thanks! We'll be in touch soon." }; // too fast to be human
+  if (!(await verifyTurnstile(formData.get(TURNSTILE_FIELD), "enquiry"))) return { message: "The security check didn't go through. Please try again." };
   if (!(await rateLimitByIp("publicForm", "enquiry"))) return { message: "Too many messages. Please try again later or email us directly." };
 
   const interested = (d.products ?? []).map((k) => getModule(k)?.name ?? k);

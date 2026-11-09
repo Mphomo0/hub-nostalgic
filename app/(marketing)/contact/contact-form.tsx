@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FieldError, FormMessage, SubmitButton } from "@/components/form-state";
+import { Turnstile, type TurnstileHandle } from "@/components/turnstile";
 import { Card, Input, Label, Textarea } from "@/components/ui";
 import { enquirySchema } from "@/lib/schemas";
 import { AVAILABLE_MODULES } from "@/modules/catalog";
@@ -14,6 +15,12 @@ export function ContactForm({ initialProducts }: { initialProducts: string[] }) 
     action: enquiryAction,
     defaultValues: { name: "", business: "", email: "", phone: "", message: "", website: "", startedAt, products: initialProducts.filter((p) => AVAILABLE_MODULES.some((m) => m.key === p)) },
   });
+
+  // Turnstile tokens are single-use, so get a fresh one after every attempt.
+  const captcha = useRef<TurnstileHandle>(null);
+  useEffect(() => {
+    if (state) captcha.current?.reset();
+  }, [state]);
 
   if (state?.ok) {
     return (
@@ -73,6 +80,7 @@ export function ContactForm({ initialProducts }: { initialProducts: string[] }) 
           <Textarea id="message" placeholder="What do you do, and roughly how many customers do you see a month…" aria-invalid={!!errors.message} {...register("message")} />
           <FieldError error={errors.message} />
         </div>
+        <Turnstile ref={captcha} action="enquiry" />
         <FormMessage state={state} />
         <SubmitButton pending={pending} pendingText="Sending…" className="w-full">Send enquiry</SubmitButton>
       </Card>
